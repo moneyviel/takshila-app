@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Takshila</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0F2A44">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Takshila">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon-32.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -147,6 +155,11 @@ table.dt tr.fr input{padding:4px 7px;font-size:12px;border-radius:6px;min-width:
 .paybadge{width:52px;height:52px;border-radius:50%;background:#FCF1CF;color:#8A6400;font-size:26px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
 .paybadge.over{background:#FBE1E1;color:#C62828}
 .paymodal .card{width:min(520px,100%)}
+#instbar{position:fixed;left:12px;right:12px;bottom:12px;max-width:520px;margin:0 auto;background:#fff;border:1px solid #E0D6C2;border-radius:14px;box-shadow:0 8px 28px rgba(15,42,68,.18);padding:10px 12px;display:flex;gap:10px;align-items:center;z-index:60;font-size:13px}
+#instbar img{width:40px;height:40px;border-radius:9px}
+#instbar b{color:#0F2A44}
+.instx{background:none;border:none;font-size:22px;color:#6B7684;padding:0 4px}
+@media (max-width:900px){.cinst{display:none}}
 </style></head><body><div id="root"></div><div class="toast" id="toast"></div><script>
 /* ===== Takshila core: helpers, state, periods, drill-down, live search ===== */
 const SB_URL = 'https://ixhkncqgbdrsxuvxcwgg.supabase.co';
@@ -325,7 +338,7 @@ function loginView(mode='login'){
      <label class="muted">Email</label><input id="em" type="email" autocomplete="username">
      <label class="muted" style="display:block;margin-top:12px">Password</label><input id="pw" type="password" autocomplete="current-password">
      <button class="btn" id="go" style="width:100%;margin-top:18px;padding:12px">Sign in</button>
-     <div class="muted" style="margin-top:14px;text-align:center">New client? <a href="#" id="tosign">Create an account</a></div>` : `
+     <div class="muted" style="margin-top:14px;text-align:center">New client? <a href="#" id="tosign">Create an account</a></div><div style="text-align:center;margin-top:12px"><button class="btn ghost sm" data-install>&#x2193; Install app on this device</button></div>` : `
      <h1>Create your client account</h1><div class="sub" style="margin-bottom:14px">For new clients of the chamber.</div>
      <div class="grid g2" style="gap:10px">
       <div><label class="muted">Full name</label><input id="s_name"></div><div><label class="muted">Mobile</label><input id="s_phone"></div>
@@ -407,12 +420,12 @@ async function render(){
   if(S.profile.role==='client'){
     root.innerHTML = `<div class="client"><div class="cbar"><div class="cbrand"><div class="mark">T</div>${esc(S.settings.chamber_name||'Takshila')} <span class="muted" style="font-weight:500;border-left:1px solid #E0D6C2;padding-left:10px">Client portal</span></div>
       <div class="ctabs">${CTABS.map(t=>`<button class="${t===S.tab&&!S.detail?'on':''}" data-tab="${t}">${t}</button>`).join('')}</div>
-      <div style="display:flex;gap:10px;align-items:center"><button class="bell" aria-label="Reminders">&#128276;<span class="bellcount" style="display:none"></span></button><span class="muted cname">${esc(S.profile.full_name)}</span><button class="btn ghost sm" id="out">Sign out</button></div></div>
+      <div style="display:flex;gap:10px;align-items:center"><button class="bell" aria-label="Reminders">&#128276;<span class="bellcount" style="display:none"></span></button><span class="muted cname">${esc(S.profile.full_name)}</span><button class="btn ghost sm cinst" data-install>Install app</button><button class="btn ghost sm" id="out">Sign out</button></div></div>
       <div class="cwrap" id="page"><div class="muted">Loading...</div></div></div><button id="toTop" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593;</button>`;
   } else {
     root.innerHTML = `<div class="app"><div class="side"><div class="logo"><div class="mark">T</div><span style="flex:1">${esc(S.settings.chamber_name||'Takshila')}</span><button class="bell dark" aria-label="Reminders">&#128276;<span class="bellcount" style="display:none"></span></button></div><div class="nav">${LTABS.map(t=>`<button class="${t===S.tab?'on':''}" data-tab="${t}">${t}</button>`).join('')}</div>
-      <div style="padding:20px;font-size:12px;color:#8FA3B8">Signed in as ${esc(S.profile.full_name)} (${esc(S.profile.role)})<br><button class="btn ghost sm" id="out" style="margin-top:8px">Sign out</button></div></div>
-      <div style="flex:1;min-width:0"><div class="mnav"><button class="bell" aria-label="Reminders" style="position:relative">&#128276;<span class="bellcount" style="display:none"></span></button>${LTABS.map(t=>`<button class="${t===S.tab?'on':''}" data-tab="${t}">${t}</button>`).join('')}<button id="out2">Sign out</button></div><div class="main" id="page"><div class="muted">Loading...</div></div></div></div>
+      <div style="padding:20px;font-size:12px;color:#8FA3B8">Signed in as ${esc(S.profile.full_name)} (${esc(S.profile.role)})<br><button class="btn ghost sm" id="out" style="margin-top:8px">Sign out</button> <button class="btn ghost sm" data-install style="margin-top:8px">Install app</button></div></div>
+      <div style="flex:1;min-width:0"><div class="mnav"><button class="bell" aria-label="Reminders" style="position:relative">&#128276;<span class="bellcount" style="display:none"></span></button>${LTABS.map(t=>`<button class="${t===S.tab?'on':''}" data-tab="${t}">${t}</button>`).join('')}<button data-install>Install app</button><button id="out2">Sign out</button></div><div class="main" id="page"><div class="muted">Loading...</div></div></div></div>
       <button id="toTop" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593;</button>`;
   }
   $$('[data-tab]').forEach(b=>b.onclick=()=>{ S.tab=b.dataset.tab; S.detail=null; window.scrollTo(0,0); render(); });
@@ -1526,4 +1539,28 @@ async function bulkReminders(){
     for(const id of ids){ const i=list.find(x=>x.id===id); await sendReminder(i, reminderText(i)); }
     m.close(); dirty('invoices','messages'); toast(ids.length+' reminder'+(ids.length===1?'':'s')+' sent.'); render(); };
 }
+/* ===== Install as an app on phone and desktop ===== */
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+let deferredInstall = null;
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+const installDismissed = () => { try { return localStorage.getItem('tk_install_hide')==='1'; } catch { return false; } };
+function installBanner(){
+  if(isStandalone() || installDismissed() || $('#instbar')) return;
+  if(!deferredInstall && !isIOS()) return;
+  const b = document.createElement('div'); b.id='instbar';
+  b.innerHTML = `<img src="icons/icon-192.png" alt=""><div style="flex:1;min-width:0"><b>Install Takshila</b><div>${deferredInstall?'Open it like an app from your home screen.':'Tap the Share button <span style="font-size:15px">&#x2191;&#xFE0E;</span> in Safari, then <b>Add to Home Screen</b>.'}</div></div>${deferredInstall?'<button class="btn sm" id="instgo">Install</button>':''}<button class="instx" aria-label="Close">&times;</button>`;
+  document.body.appendChild(b);
+  b.querySelector('.instx').onclick = () => { b.remove(); try { localStorage.setItem('tk_install_hide','1'); } catch {} };
+  if(b.querySelector('#instgo')) b.querySelector('#instgo').onclick = async () => { deferredInstall.prompt(); await deferredInstall.userChoice.catch(()=>{}); deferredInstall=null; b.remove(); };
+}
+function installApp(){
+  if(isStandalone()) return toast('Takshila is already installed on this device.');
+  if(deferredInstall){ deferredInstall.prompt(); deferredInstall.userChoice.finally(()=>{ deferredInstall=null; $('#instbar')?.remove(); }); return; }
+  modal(`<h3>Install Takshila</h3>${isIOS()?'<ol class="ul"><li>Open this page in <b>Safari</b>.</li><li>Tap the <b>Share</b> button at the bottom.</li><li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol>':'<ol class="ul"><li>Open this page in <b>Chrome</b> (Android) or Chrome/Edge (computer).</li><li>Tap the <b>&#8942;</b> menu at the top right.</li><li>Choose <b>Install app</b> or <b>Add to Home screen</b>.</li></ol>'}<div class="muted" style="margin-top:8px">The app opens full screen with its own icon and stays signed in.</div>`);
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; installBanner(); });
+window.addEventListener('appinstalled', () => { $('#instbar')?.remove(); toast('Takshila installed. Open it from your home screen.'); });
+setTimeout(installBanner, 2500);
+document.addEventListener('click', e => { if(e.target.closest('[data-install]')) installApp(); });
 </script></body></html>
