@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Takshila</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,"Segoe UI",Arial,sans-serif;background:#F7F5F0;color:#2E3A48;font-size:14px}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:14px;border:1px solid #D9CDB6;border-radius:8px;padding:9px 11px;background:#fff;color:#2E3A48;width:100%}
+textarea{resize:vertical}
+a{color:#2F6FB0}
+.btn{background:#B08D57;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-weight:600;font-size:13.5px;white-space:nowrap}
+.btn:disabled{opacity:.5}
+.btn.ghost{background:#fff;color:#0F2A44;border:1px solid #D5CFC2}
+.btn.navy{background:#0F2A44}
+.btn.green{background:#2E7D4F}
+.btn.red{background:#C62828}
+.btn.sm{padding:6px 11px;font-size:12.5px}
+.card{background:#fff;border:1px solid #E4DFD4;border-radius:12px;padding:16px}
+.card h3{font-size:14.5px;color:#0F2A44;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+h1{font-size:22px;color:#0F2A44}
+.sub{color:#6B7684;font-size:13px;margin-top:3px}
+.muted{color:#6B7684;font-size:12.5px}
+.grid{display:grid;gap:14px;align-items:start}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #F0ECE3;font-size:13.5px}
+.row:last-child{border-bottom:none}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:10px;white-space:nowrap}
+.Civil{background:#E3EDF7;color:#2F6FB0}.Criminal{background:#F6E1E1;color:#A3262A}.Labour{background:#F8EBD6;color:#9A5F0C}.Matrimonial{background:#EFE3F3;color:#7A3E8E}.Any{background:#EEE;color:#555}
+.ok{background:#E2F1E8;color:#2E7D4F}.warn{background:#FCF1CF;color:#8A6400}.bad{background:#FBE1E1;color:#C62828}.info{background:#E3EDF7;color:#2F6FB0}.grey{background:#EEE7DA;color:#7A8592}
+.kpi{font-size:24px;font-weight:700;color:#0F2A44}
+.chg{font-size:12px;font-weight:600;margin-top:3px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;color:#6B7684;font-weight:600;padding:8px;border-bottom:1px solid #E4DFD4;white-space:nowrap}
+td{white-space:nowrap;padding:9px 8px;border-bottom:1px solid #F0ECE3;font-size:13.5px;vertical-align:top}
+tr.click:hover td{background:#FBF8F2;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{white-space:nowrap;padding:5px 11px;border-radius:14px;font-size:12px;font-weight:600;background:#fff;border:1px solid #D5CFC2;color:#2E3A48}
+.chip.on{background:#0F2A44;color:#fff;border-color:#0F2A44}
+.client .chip.on{background:#B08D57;border-color:#B08D57}
+.pbar{display:grid;grid-template-columns:100px 1fr auto;gap:8px;align-items:center}
+.flt{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.flt label{font-size:11px;color:#6B7684;display:block;margin-bottom:3px}
+mark.y{background:#FCEBA6}
+/* lawyer layout */
+.app{display:flex;min-height:100vh}
+.side{width:220px;background:#0F2A44;color:#C9D3DE;padding:18px 0;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:auto}
+.logo{display:flex;align-items:center;gap:10px;padding:0 18px 20px;color:#fff;font-weight:700;font-size:17px}
+.mark{width:30px;height:30px;border-radius:7px;background:#B08D57;color:#0F2A44;display:flex;align-items:center;justify-content:center;font-weight:800}
+.nav button{display:block;width:100%;text-align:left;background:none;border:none;color:#C9D3DE;padding:10px 20px;font-size:13.5px}
+.nav button.on{background:#18395A;color:#fff;border-left:3px solid #B08D57;padding-left:17px}
+.main{flex:1;padding:22px 26px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+/* client layout */
+.client{background:#FBF8F2;min-height:100vh}
+.cbar{height:62px;background:#fff;border-bottom:1px solid #EAE3D5;display:flex;align-items:center;justify-content:space-between;padding:0 28px;gap:14px;position:sticky;top:0;z-index:5}
+.cbrand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;color:#0F2A44}
+.cbrand .mark{border-radius:50%;background:#B08D57;color:#fff}
+.ctabs{display:flex;gap:4px;overflow:auto}
+.ctabs button{background:none;border:none;padding:20px 12px;font-size:14px;color:#5A6676;border-bottom:3px solid transparent}
+.ctabs button.on{color:#0F2A44;font-weight:600;border-color:#B08D57}
+.cwrap{padding:24px 28px;max-width:1280px;margin:0 auto}
+.client .card{border-radius:16px;border-color:#EAE3D5}
+.client .btn{border-radius:22px}
+.bubble{max-width:70%;border-radius:14px;padding:10px 13px;margin:7px 0;font-size:14px;line-height:1.5}
+.bubble.me{background:#0F2A44;color:#fff;margin-left:auto}
+.bubble.them{background:#fff;border:1px solid #EAE3D5}
+.steps{display:flex;gap:0;align-items:flex-start}
+.step{flex:1;text-align:center;font-size:12.5px}
+.dot{width:26px;height:26px;border-radius:50%;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.d1{background:#2E7D4F;color:#fff}.d2{background:#B08D57;color:#fff}.d3{background:#fff;border:2px solid #D9CDB6;color:#9AA3AE}
+/* login */
+.login{display:flex;min-height:100vh}
+.login .l{flex:1.1;background:#0F2A44;color:#fff;padding:56px;display:flex;flex-direction:column;justify-content:space-between}
+.login .r{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0F2A44;color:#fff;padding:10px 18px;border-radius:10px;font-size:13.5px;z-index:99;display:none;max-width:90vw}
+.modal{position:fixed;inset:0;background:rgba(15,42,68,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal .card{width:min(760px,100%);max-height:90vh;overflow:auto}
+.ring{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ring>div{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12.5px;color:#0F2A44}
+.barw{height:7px;background:#F0ECE3;border-radius:4px;margin-top:3px}.barw>div{height:7px;border-radius:4px}
+@media (max-width:900px){
+ .side{display:none}.mnav{display:flex!important}
+ .g2,.g3,.g4{grid-template-columns:1fr}.main{padding:14px}
+ .login{flex-direction:column}.login .l{padding:28px}
+ .cwrap{padding:14px}.cbar{padding:0 12px}.pbar{grid-template-columns:1fr}
+ .ctabs button{padding:12px 8px;font-size:13px}
+ .grid{grid-template-columns:1fr!important}
+ .cbar{height:auto;flex-wrap:wrap;padding:10px 12px 0}.ctabs{order:3;width:100%}.cname{display:none}
+ .flt{grid-template-columns:1fr 1fr}
+}
+.mnav{display:none;overflow:auto;gap:6px;background:#0F2A44;padding:8px}
+.mnav button{background:#18395A;color:#fff;border:none;border-radius:14px;padding:6px 11px;font-size:12px;white-space:nowrap}
+.mnav button.on{background:#B08D57}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="toast" id="toast"></div>
+<script>
+const SB_URL = 'https://ixhkncqgbdrsxuvxcwgg.supabase.co';
+const SB_KEY = 'sb_publishable_TqZsuaoz-JiTbHH3a7EqIA_6VFngjei';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const $ = s => document.querySelector(s);
+const root = $('#root');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const inr = n => 'Rs ' + Math.round(Number(n)||0).toLocaleString('en-IN');
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const pd = s => { if(!s) return null; const [y,m,d] = s.slice(0,10).split('-').map(Number); return new Date(y, m-1, d); };
+const fd = s => { const d = typeof s === 'string' ? pd(s) : s; return d ? d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear() : '-'; };
+const fdShort = s => { const d = pd(s); return d ? d.getDate()+' '+MON[d.getMonth()] : '-'; };
+const TODAY = iso(new Date());
+function toast(t){ const el=$('#toast'); el.textContent=t; el.style.display='block'; clearTimeout(toast.t); toast.t=setTimeout(()=>el.style.display='none',3200); }
+const tag = (cls, t) => `<span class="tag ${cls}">${esc(t)}</span>`;
+const areaTag = a => tag(a||'Any', a||'Any');
+function healthTag(h){ const m={'On track':'ok','Hearing today':'warn','Brief pending':'warn','Draft ready':'warn','Docs missing':'warn','Limitation':'bad'}; return tag(m[h]||'grey', h||'-'); }
+function pctColor(p){ return p>=80?'#2E7D4F':p>=60?'#B08D57':'#9AA3AE'; }
+function ring(p){ return `<div class="ring" style="background:conic-gradient(${pctColor(p)} ${p*3.6}deg,#F0ECE3 0)"><div>${p}%</div></div>`; }
+async function q(promise){ const {data, error} = await promise; if(error){ toast('Error: '+error.message); throw error; } return data; }
+
+/* ---------- state ---------- */
+const S = { user:null, profile:null, tab:null, view:{}, cache:{} };
+
+/* ---------- period filter (same as the football club accounts) ---------- */
+const POPTS = ['Date range','Last month','3 months','6 months','1 year','Month','Quarter','Year','All time'];
+const COPTS = ['Previous period','Same period last year','Custom range','No comparison'];
+function newPeriod(sel='Month', cmp='Previous period', anchor){ const t=new Date(); return { sel, cmp, anchor: anchor || iso(new Date(t.getFullYear(), t.getMonth(), 1)).slice(0,7), from:'', to:'', cfrom:'', cto:'' }; }
+function fyStart(d){ return d.getMonth()>=3 ? new Date(d.getFullYear(),3,1) : new Date(d.getFullYear()-1,3,1); }
+function range(P){
+  const t = new Date(); t.setHours(0,0,0,0); const [ay,am] = P.anchor.split('-').map(Number); const A = new Date(ay, am-1, 1);
+  let a, b, label;
+  switch(P.sel){
+    case 'Date range': a = P.from?pd(P.from):new Date(t.getFullYear(),t.getMonth(),1); b = P.to?pd(P.to):t; break;
+    case 'Last month': a = new Date(t.getFullYear(), t.getMonth()-1, 1); b = new Date(t.getFullYear(), t.getMonth(), 0); label = MON[a.getMonth()]+' '+a.getFullYear(); break;
+    case '3 months': a = new Date(t.getFullYear(), t.getMonth()-3, t.getDate()+1); b = t; break;
+    case '6 months': a = new Date(t.getFullYear(), t.getMonth()-6, t.getDate()+1); b = t; break;
+    case '1 year': a = new Date(t.getFullYear()-1, t.getMonth(), t.getDate()+1); b = t; break;
+    case 'Month': a = A; b = new Date(ay, am, 0); label = ['January','February','March','April','May','June','July','August','September','October','November','December'][am-1]+' '+ay; break;
+    case 'Quarter': { const fs = fyStart(A); const qi = Math.floor(((A.getFullYear()-fs.getFullYear())*12 + A.getMonth()-3)/3); a = new Date(fs.getFullYear(), 3+qi*3, 1); b = new Date(fs.getFullYear(), 6+qi*3, 0); label = 'Q'+(qi+1)+' FY'+String(fs.getFullYear()+1).slice(2)+' ('+MON[a.getMonth()]+' to '+MON[b.getMonth()]+' '+b.getFullYear()+')'; break; }
+    case 'Year': { const fs = fyStart(A); a = fs; b = new Date(fs.getFullYear()+1, 2, 31); label = 'FY'+String(fs.getFullYear()+1).slice(2)+' (Apr '+fs.getFullYear()+' to Mar '+(fs.getFullYear()+1)+')'; break; }
+    default: a = new Date(2000,0,1); b = new Date(2100,0,1); label = 'All time';
+  }
+  label = label || fd(a)+' to '+fd(b);
+  let c = null;
+  if(P.sel !== 'All time'){
+    const days = Math.round((b-a)/864e5)+1;
+    if(P.cmp==='Previous period'){
+      if(['Month','Last month'].includes(P.sel)){ const ca=new Date(a.getFullYear(),a.getMonth()-1,1); c={a:ca,b:new Date(a.getFullYear(),a.getMonth(),0)}; c.label=['January','February','March','April','May','June','July','August','September','October','November','December'][ca.getMonth()]+' '+ca.getFullYear(); }
+      else if(P.sel==='Quarter'){ c={a:new Date(a.getFullYear(),a.getMonth()-3,1), b:new Date(a.getFullYear(),a.getMonth(),0)}; }
+      else if(P.sel==='Year'){ c={a:new Date(a.getFullYear()-1,a.getMonth(),1), b:new Date(b.getFullYear()-1,b.getMonth()+1,0)}; }
+      else { const cb=new Date(a); cb.setDate(cb.getDate()-1); const ca=new Date(cb); ca.setDate(ca.getDate()-days+1); c={a:ca,b:cb}; }
+    } else if(P.cmp==='Same period last year'){ c={a:new Date(a.getFullYear()-1,a.getMonth(),a.getDate()), b:new Date(b.getFullYear()-1,b.getMonth(),b.getDate())}; }
+    else if(P.cmp==='Custom range' && P.cfrom && P.cto){ c={a:pd(P.cfrom), b:pd(P.cto)}; }
+    if(c && !c.label) c.label = fd(c.a)+' to '+fd(c.b);
+  }
+  return {a, b, label, c};
+}
+function inR(s, r){ const d = pd(s); return d && d >= r.a && d <= r.b; }
+function periodBar(key){
+  const P = S.view[key];
+  const R = range(P);
+  const ch = (o, set, attr) => o.map(x=>`<button class="chip ${x===P[set]?'on':''}" data-p="${key}" data-k="${set}" data-v="${x}">${x}</button>`).join('');
+  let extra = '';
+  if(['Month','Quarter','Year'].includes(P.sel)) extra = `<input type="month" style="width:150px;padding:5px 8px" value="${P.anchor}" data-pin="${key}" data-k="anchor">`;
+  if(P.sel==='Date range') extra = `<input type="date" style="width:150px;padding:5px 8px" value="${P.from}" data-pin="${key}" data-k="from"> <input type="date" style="width:150px;padding:5px 8px" value="${P.to}" data-pin="${key}" data-k="to">`;
+  let cx = '';
+  if(P.cmp==='Custom range') cx = `<input type="date" style="width:150px;padding:5px 8px" value="${P.cfrom}" data-pin="${key}" data-k="cfrom"> <input type="date" style="width:150px;padding:5px 8px" value="${P.cto}" data-pin="${key}" data-k="cto">`;
+  return `<div class="card" style="padding:12px 14px;margin-bottom:14px">
+   <div class="pbar"><span class="muted">Period</span><div class="chips">${ch(POPTS,'sel')} ${extra}</div><b style="font-size:12.5px;color:#0F2A44">${esc(R.label)}</b></div>
+   ${P.sel==='All time'?'':`<div class="pbar" style="margin-top:8px"><span class="muted">Compare with</span><div class="chips">${ch(COPTS,'cmp')} ${cx}</div><b style="font-size:12.5px;color:#0F2A44">${R.c?'vs '+esc(R.c.label):''}</b></div>`}</div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-p]'); if(!b) return;
+  S.view[b.dataset.p][b.dataset.k] = b.dataset.v; render();
+});
+document.addEventListener('change', e => {
+  const i = e.target.closest('[data-pin]'); if(!i) return;
+  S.view[i.dataset.pin][i.dataset.k] = i.value; render();
+});
+function change(cur, prev, betterLow=false, money=true){
+  if(prev==null) return '';
+  const d = cur - prev; const pct = prev ? (d/prev*100) : null;
+  const up = d > 0; const good = d === 0 ? null : (betterLow ? !up : up);
+  const col = good===null ? '#7A8592' : good ? '#2E7D4F' : '#C62828';
+  const arrow = d===0 ? '' : up ? '&#9650; ' : '&#9660; ';
+  const amt = money ? inr(Math.abs(d)) : Math.abs(d);
+  return `<div class="chg" style="color:${col}">${arrow}${d===0?'No change':amt}${pct===null?(d===0?'':' · new'):' · '+(pct>0?'+':'')+pct.toFixed(1)+'%'}</div>`;
+}
+
+/* ---------- auth ---------- */
+
+function loginView(mode='login'){
+  root.innerHTML = `<div class="login">
+   <div class="l"><div class="logo" style="padding:0"><div class="mark">T</div>Takshila</div>
+    <div><div style="font-size:34px;font-weight:700;line-height:1.25">A law chamber that<br>runs itself.</div>
+    <div style="color:#C9D3DE;margin-top:14px;font-size:15px;line-height:1.6">Lawyers see every case, draft, hearing and rupee in one place.<br>Clients follow their case, share documents and voice notes, and pay online.</div></div>
+    <div style="color:#8FA3B8;font-size:12.5px">Demo environment. All names and cases are sample data.</div></div>
+   <div class="r"><div class="card" style="width:420px;max-width:100%;padding:28px">
+    ${mode==='login' ? `
+     <h1>Sign in</h1><div class="sub" style="margin-bottom:18px">Use your email and password.</div>
+     <label class="muted">Email</label><input id="em" type="email" autocomplete="username">
+     <label class="muted" style="display:block;margin-top:12px">Password</label><input id="pw" type="password" autocomplete="current-password">
+     <button class="btn" id="go" style="width:100%;margin-top:18px;padding:12px">Sign in</button>
+     <div class="muted" style="margin-top:14px;text-align:center">New client? <a href="#" id="tosign">Create an account</a></div>` : `
+     <h1>Create your client account</h1><div class="sub" style="margin-bottom:14px">For new clients of the chamber.</div>
+     <div class="grid g2" style="gap:10px">
+      <div><label class="muted">Full name</label><input id="s_name"></div><div><label class="muted">Mobile</label><input id="s_phone"></div>
+      <div><label class="muted">Email</label><input id="s_em" type="email"></div><div><label class="muted">Password (8+ characters)</label><input id="s_pw" type="password"></div>
+      <div><label class="muted">Preferred language</label><select id="s_lang"><option>Hindi</option><option>English</option></select></div><div><label class="muted">City</label><input id="s_city"></div>
+     </div>
+     <label style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-size:13px"><input type="checkbox" id="s_ok" style="width:auto;margin-top:2px"> I agree to the chamber's terms and privacy notice, and to my documents being used for my legal matter.</label>
+     <button class="btn" id="signup" style="width:100%;margin-top:14px;padding:12px">Create account</button>
+     <div class="muted" style="margin-top:12px;text-align:center"><a href="#" id="tolog">Back to sign in</a></div>`}
+   </div></div></div>`;
+  if(mode==='login'){
+    $('#go').onclick = async () => { $('#go').disabled=true; const {error} = await sb.auth.signInWithPassword({email:$('#em').value.trim(), password:$('#pw').value}); $('#go').disabled=false; if(error) toast(error.message); };
+    $('#pw').onkeydown = e => { if(e.key==='Enter') $('#go').click(); };
+    $('#tosign').onclick = e => { e.preventDefault(); loginView('signup'); };
+  } else {
+    $('#tolog').onclick = e => { e.preventDefault(); loginView('login'); };
+    $('#signup').onclick = async () => {
+      if(!$('#s_ok').checked) return toast('Please accept the terms first.');
+      $('#signup').disabled = true;
+      const {data, error} = await sb.auth.signUp({ email:$('#s_em').value.trim(), password:$('#s_pw').value,
+        options:{ data:{ full_name:$('#s_name').value, phone:$('#s_phone').value, language:$('#s_lang').value, city:$('#s_city').value, role:'client' } } });
+      $('#signup').disabled = false;
+      if(error) return toast(error.message);
+      if(!data.session) toast('Account created. Check your email to confirm, then sign in.');
+    };
+  }
+}
+async function boot(session){
+  if(!session){ S.user=null; S.profile=null; return loginView(); }
+  S.user = session.user;
+  root.innerHTML = '<div style="padding:40px" class="muted">Loading...</div>';
+  const p = await q(sb.from('profiles').select('*').eq('id', S.user.id).maybeSingle());
+  if(!p){ root.innerHTML='<div style="padding:40px">Profile not found. <a href="#" onclick="sb.auth.signOut()">Sign out</a></div>'; return; }
+  S.profile = p; S.cache = {};
+  S.view = { acc:newPeriod('Month','Previous period'), pay:newPeriod('Month','Previous period'), hist:newPeriod('All time','Same period last year'), cases:{status:'active', area:'All', court:'All', stage:'All', outcome:'All', search:''} };
+  S.tab = p.role==='client' ? 'Home' : 'Morning brief';
+  render();
+}
+sb.auth.onAuthStateChange((ev, session) => { if(ev==='SIGNED_IN' || ev==='SIGNED_OUT' || ev==='INITIAL_SESSION'){ if(ev==='SIGNED_IN' && S.user && session && S.user.id===session.user.id) return; boot(session); } });
+
+/* ---------- data loading ---------- */
+async function load(names){
+  const need = names.filter(n=>!S.cache[n]);
+  const map = {
+    cases: ()=>sb.from('cases').select('*, clients(full_name)').order('next_date',{ascending:true, nullsFirst:false}),
+    clients: ()=>sb.from('clients').select('*').order('full_name'),
+    hearings: ()=>sb.from('hearings').select('*, cases(title, area, court, client_id)').order('hearing_date'),
+    documents: ()=>sb.from('documents').select('*, cases(title)').order('created_at',{ascending:false}),
+    drafts: ()=>sb.from('drafts').select('*, cases(title, area)').order('created_at',{ascending:false}),
+    templates: ()=>sb.from('templates').select('*').order('area'),
+    invoices: ()=>sb.from('invoices').select('*, clients(full_name), cases(title, area)').order('issued_on',{ascending:false}),
+    expenses: ()=>sb.from('expenses').select('*, cases(title, area)'),
+    messages: ()=>sb.from('messages').select('*, cases(title)').order('created_at'),
+    law_updates: ()=>sb.from('law_updates').select('*').order('published_on',{ascending:false}),
+    chamber_roles: ()=>sb.from('chamber_roles').select('*').order('id'),
+    enquiries: ()=>sb.from('enquiries').select('*').order('created_at')
+  };
+  const res = await Promise.all(need.map(n=>q(map[n]())));
+  need.forEach((n,i)=>S.cache[n]=res[i]);
+}
+function dirty(...n){ n.forEach(x=>delete S.cache[x]); }
+
+/* ---------- shells ---------- */
+const LTABS = ['Morning brief','Cases','New intake','Drafts','Court calendar','Clients','Law updates','Accounts','My Chamber','Settings'];
+const CTABS = ['Home','My cases','Documents','Payments','Messages'];
+async function render(){
+  if(!S.profile) return;
+  const scrollY = window.scrollY;
+  if(S.profile.role==='client'){
+    root.innerHTML = `<div class="client"><div class="cbar"><div class="cbrand"><div class="mark">T</div>Takshila <span class="muted" style="font-weight:500;border-left:1px solid #E0D6C2;padding-left:10px">Client portal</span></div>
+      <div class="ctabs">${CTABS.map(t=>`<button class="${t===S.tab?'on':''}" data-tab="${t}">${t}</button>`).join('')}</div>
+      <div style="display:flex;gap:10px;align-items:center"><span class="muted cname">${esc(S.profile.full_name)}</span><button class="btn ghost sm" id="out">Sign out</button></div></div>
+      <div class="cwrap" id="page"><div class="muted">Loading...</div></div></div>`;
+  } else {
+    root.innerHTML = `<div class="app"><div class="side"><div class="logo"><div class="mark">T</div>Takshila</div><div class="nav">${LTABS.map(t=>`<button class="${t===S.tab?'on':''}" data-tab="${t}">${t}</button>`).join('')}</div>
+      <div style="padding:20px;font-size:12px;color:#8FA3B8">Signed in as ${esc(S.profile.full_name)} (${esc(S.profile.role)})<br><button class="btn ghost sm" id="out" style="margin-top:8px">Sign out</button></div></div>
+      <div style="flex:1;min-width:0"><div class="mnav">${LTABS.map(t=>`<button class="${t===S.tab?'on':''}" data-tab="${t}">${t}</button>`).join('')}<button id="out2">Sign out</button></div><div class="main" id="page"><div class="muted">Loading...</div></div></div></div>`;
+  }
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ S.tab=b.dataset.tab; S.detail=null; window.scrollTo(0,0); render(); });
+  ['#out','#out2'].forEach(s=>{ const b=$(s); if(b) b.onclick=()=>sb.auth.signOut(); });
+  const fn = PAGES[S.detail ? S.detail.kind : S.tab];
+  try { await fn(); window.scrollTo(0, scrollY); } catch(e){ console.error(e); $('#page').innerHTML = `<div class="card">Something went wrong: ${esc(e.message)}</div>`; }
+}
+async function fn(name, body){
+  const {data, error} = await sb.functions.invoke(name, {body});
+  if(error){ let msg = error.message; try { const j = await error.context.json(); msg = j.error || msg; } catch {} throw new Error(msg); }
+  if(data && data.ok === false) throw new Error(data.error);
+  return data;
+}
+window.fn = fn;
+function page(html){ $('#page').innerHTML = html; }
+function openCase(id){ S.detail = {kind:'case', id}; render(); }
+window.openCase = openCase;
+
+/* ---------- LAWYER PAGES ---------- */
+const PAGES = {};
+PAGES['Morning brief'] = async () => {
+  await load(['cases','hearings','drafts','law_updates','chamber_roles','enquiries','invoices']);
+  const C = S.cache; const today = C.hearings.filter(h=>h.hearing_date===TODAY);
+  const week = new Date(); week.setDate(week.getDate()+7);
+  const deadlines = C.cases.filter(c=>c.status==='active' && c.next_date && pd(c.next_date)<=week && pd(c.next_date)>=pd(TODAY));
+  const pendingDrafts = C.drafts.filter(d=>d.status!=='Approved');
+  const intake = C.cases.filter(c=>c.status==='intake');
+  const overdue = C.invoices.filter(i=>!i.paid_on && i.due_on && i.due_on < TODAY);
+  const h = new Date().getHours(); const greet = h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  page(`<div class="top"><div><h1>${greet}, Counsel</h1><div class="sub">${fd(TODAY)} · My Chamber kept everything ready</div></div></div>
+   <div class="grid g4" style="margin-bottom:14px">
+    <div class="card"><div class="muted">Hearings today</div><div class="kpi">${today.length}</div></div>
+    <div class="card"><div class="muted">Drafts awaiting approval</div><div class="kpi" style="color:#B08D57">${pendingDrafts.length}</div></div>
+    <div class="card"><div class="muted">New cases from clients</div><div class="kpi">${intake.length}</div><div class="muted">${C.enquiries.filter(e=>e.stage==='new').length} new enquiries</div></div>
+    <div class="card"><div class="muted">Dates in next 7 days</div><div class="kpi" style="color:#C62828">${deadlines.length}</div><div class="muted">${overdue.length} invoices overdue</div></div></div>
+   <div class="grid" style="grid-template-columns:1.4fr 1fr">
+    <div class="card"><h3>Today's hearings</h3>${today.length?today.map(x=>`<div class="row click" onclick="openCase('${x.case_id}')"><div><b>${esc(x.cases?.title)}</b> ${areaTag(x.cases?.area)}<div class="muted">${esc(x.purpose)} · ${esc(x.cases?.court)}</div></div><span class="tag ok">Open</span></div>`).join(''):'<div class="muted">No hearings today.</div>'}
+     <h3 style="margin-top:14px">Needs your decision</h3>
+     ${intake.map(c=>`<div class="row"><div>New case from client: <b>${esc(c.title)}</b><div class="muted">${esc(c.clients?.full_name)} · ${esc(c.matter_type||c.area)}</div></div><button class="btn navy sm" onclick="openCase('${c.id}')">Review</button></div>`).join('')}
+     ${pendingDrafts.slice(0,4).map(d=>`<div class="row"><div>${esc(d.title)}<div class="muted">${esc(d.cases?.title)} · ${esc(d.status)}</div></div><button class="btn navy sm" onclick="openCase('${d.case_id}')">Review</button></div>`).join('')}
+     ${!intake.length && !pendingDrafts.length ? '<div class="muted">Nothing waiting. Open a case and generate a draft to see it here.</div>':''}</div>
+    <div class="grid"><div class="card"><h3>Law changes affecting your cases</h3>${C.law_updates.map(l=>`<div class="row"><div>${tag(l.level==='High'?'bad':l.level==='Medium'?'warn':'info', l.level)} ${esc(l.title)}<div class="muted">Affects ${esc(l.affects)}</div></div></div>`).join('')}</div>
+     <div class="card"><h3>My Chamber, working now</h3>${C.chamber_roles.slice(2,7).map(r=>`<div class="row"><span><b>${esc(r.name)}</b> · ${esc(r.current_task)}</span><span style="width:8px;height:8px;border-radius:50%;background:#2E7D4F;display:inline-block"></span></div>`).join('')}</div></div></div>`);
+};
+
+PAGES['Cases'] = async () => {
+  await load(['cases']);
+  const V = S.view.cases; const all = S.cache.cases;
+  const R = range(S.view.hist);
+  const uniq = k => ['All', ...new Set(all.map(c=>c[k]).filter(Boolean))];
+  const sel = (k, label) => `<div><label>${label}</label><select data-cf="${k}">${uniq(k==='outcome'?'outcome':k).map(o=>`<option ${V[k]===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
+  const base = all.filter(c => V.status==='all' ? c.status!=='intake' : c.status===V.status);
+  const filt = base.filter(c => (V.area==='All'||c.area===V.area) && (V.court==='All'||c.court===V.court) && (V.stage==='All'||c.stage===V.stage) && (V.outcome==='All'||c.outcome===V.outcome)
+     && (!V.search || (c.title+' '+(c.clients?.full_name||'')+' '+(c.court||'')+' '+(c.act_section||'')).toLowerCase().includes(V.search.toLowerCase()))
+     && (S.view.hist.sel==='All time' || inR(V.status==='closed' ? c.closed_on : c.filed_on, R)));
+  const cmpSet = R.c ? base.filter(c => (V.area==='All'||c.area===V.area) && (V.court==='All'||c.court===V.court) && (V.outcome==='All'||c.outcome===V.outcome) && inR(V.status==='closed' ? c.closed_on : c.filed_on, R.c)) : null;
+  const won = s => s.filter(c=>['Bail granted','Won','Settled'].includes(c.outcome)).length;
+  const fees = s => s.reduce((a,c)=>a+Number(c.fee_agreed||0),0);
+  const counts = {active:all.filter(c=>c.status==='active').length, closed:all.filter(c=>c.status==='closed').length};
+  const hist = V.status==='closed';
+  page(`<div class="top"><div><h1>${hist?'Case history':'Cases'}</h1><div class="sub">${hist?'Every closed matter · pick a period and filters to find a case':'Active matters sorted by next date'}</div></div>
+    <div class="chips"><button class="chip ${V.status==='active'?'on':''}" data-cs="active">Active ${counts.active}</button><button class="chip ${hist?'on':''}" data-cs="closed">History ${counts.closed}</button><button class="chip ${V.status==='all'?'on':''}" data-cs="all">All ${counts.active+counts.closed}</button></div></div>
+   ${periodBar('hist')}
+   <div class="card" style="padding:12px;margin-bottom:14px"><div class="flt">
+    <div><label>Search</label><input data-cf="search" value="${esc(V.search)}" placeholder="Case, client, court, section"></div>
+    ${sel('area','Area')}${sel('court','Court')}${sel('stage','Stage')}${sel('outcome','Outcome')}</div>
+    <div class="muted" style="margin-top:8px">Period applies to the ${hist?'closing':'filing'} date.</div></div>
+   <div class="grid g4" style="margin-bottom:14px">
+    <div class="card"><div class="muted">Matching cases</div><div class="kpi">${filt.length}</div>${cmpSet?change(filt.length,cmpSet.length,false,false):''}</div>
+    <div class="card"><div class="muted">Won, granted or settled</div><div class="kpi" style="color:#2E7D4F">${filt.length?(won(filt)/filt.length*100).toFixed(1)+'%':'-'}</div>${cmpSet&&cmpSet.length?`<div class="muted">Comparison: ${(won(cmpSet)/cmpSet.length*100).toFixed(1)}%</div>`:''}</div>
+    <div class="card"><div class="muted">Fees agreed</div><div class="kpi">${inr(fees(filt))}</div>${cmpSet?change(fees(filt),fees(cmpSet)):''}</div>
+    <div class="card"><div class="muted">Dates in next 7 days</div><div class="kpi">${filt.filter(c=>c.next_date && (pd(c.next_date)-pd(TODAY))/864e5<=7 && c.next_date>=TODAY).length}</div></div></div>
+   <div class="card" style="overflow:auto"><table><tr><th>Case</th><th>Area</th><th>Client</th><th>Court</th><th>${hist?'Outcome':'Stage'}</th><th>${hist?'Closed':'Next date'}</th><th>${hist?'Fee':'Health'}</th></tr>
+    ${filt.map(c=>`<tr class="click" onclick="openCase('${c.id}')"><td><b>${esc(c.title)}</b></td><td>${areaTag(c.area)}</td><td>${esc(c.clients?.full_name)}</td><td>${esc(c.court)}</td>
+     <td>${hist?tag(c.outcome==='Rejected'||c.outcome==='Lost'?'bad':'ok',c.outcome):esc(c.stage)}</td><td>${hist?fd(c.closed_on):(c.next_date===TODAY?'<b>Today</b>':fd(c.next_date))}</td><td>${hist?inr(c.fee_agreed):healthTag(c.health)}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">No cases match these filters.</td></tr>'}</table></div>`);
+  document.querySelectorAll('[data-cs]').forEach(b=>b.onclick=()=>{ V.status=b.dataset.cs; if(V.status!=='closed') V.outcome='All'; render(); });
+  document.querySelectorAll('[data-cf]').forEach(i=>{ const ev = i.tagName==='INPUT'?'change':'change'; i.addEventListener(ev, ()=>{ V[i.dataset.cf]=i.value; render(); }); });
+};
+
+PAGES['case'] = async () => {
+  await load(['cases','hearings','documents','drafts','templates','messages']);
+  const c = S.cache.cases.find(x=>x.id===S.detail.id); if(!c) return page('<div class="card">Case not found.</div>');
+  const staff = S.profile.role!=='client';
+  const hs = S.cache.hearings.filter(h=>h.case_id===c.id);
+  const docs = S.cache.documents.filter(d=>d.case_id===c.id);
+  const drafts = S.cache.drafts.filter(d=>d.case_id===c.id);
+  const msgs = S.cache.messages.filter(m=>m.case_id===c.id);
+  let sim = [];
+  if(staff && c.status!=='closed'){ sim = await q(sb.rpc('similar_cases',{p_case:c.id})); sim = sim.filter(s=>s.pct>=50); }
+  const best = sim[0];
+  const tpls = S.cache.templates.filter(t=>t.area===c.area || t.area==='Any');
+  page(`<div class="top"><div><a href="#" id="back" class="muted">&larr; Back</a><h1 style="margin-top:6px">${esc(c.title)} ${areaTag(c.area)}</h1><div class="sub">${esc(c.clients?.full_name)} · ${esc(c.court)} · ${esc(c.matter_type||'')} · ${c.status==='closed'?'Closed '+fd(c.closed_on)+' · '+esc(c.outcome):'Stage: '+esc(c.stage)}</div></div>
+    <div class="chips">${c.status==='intake'?`<button class="btn green" id="accept">Accept case</button>`:''}${best?`<button class="btn ghost" style="border-color:#2E7D4F;color:#2E7D4F" id="tosim">${sim.length} similar past cases · best ${best.pct}%</button>`:''}</div></div>
+   <div class="grid" style="grid-template-columns:1.3fr 1fr">
+    <div class="grid">
+     ${staff && c.status!=='closed'?`<div class="card" style="border-color:#2F6FB0"><h3>eCourts <span class="chips"><input id="cnr" placeholder="16-character CNR" value="${esc(c.cnr||'')}" style="width:190px;padding:6px 9px"><button class="btn navy sm" id="sync">Sync from eCourts</button></span></h3>
+      ${c.ecourts?`<div class="grid g3" style="gap:8px;margin-bottom:8px">${[['Status',c.ecourts.caseStatus],['Purpose',c.ecourts.purpose],['Next hearing',fd(c.ecourts.nextHearingDate)],['Court',(c.ecourts.courtName||'')+(c.ecourts.courtNo?', Court '+c.ecourts.courtNo:'')],['Judge',(c.ecourts.judges||[]).join(', ')],['Case number',c.ecourts.caseNumber]].map(([k,v])=>`<div><div class="muted">${k}</div><b style="font-size:13px">${esc(v||'-')}</b></div>`).join('')}</div>
+       ${(c.ecourts.orders||[]).length?`<div class="muted" style="margin-bottom:4px">Recent orders</div>${c.ecourts.orders.slice(0,4).map(o=>`<div class="row"><span>${fd(o.date)}</span><span>${esc(o.type)}</span></div>`).join('')}`:''}
+       <div class="muted" style="margin-top:6px">Last synced ${new Date(c.ecourts_synced_at).toLocaleString('en-IN')}. Hearing dates and stage are updated automatically.</div>`:'<div class="muted">Enter the CNR printed on the case papers (for example DLHC010001232024) and press Sync. Next date, stage, judge, hearing history and orders come in from eCourts.</div>'}</div>`:''}
+     <div class="card"><h3>Summary ${staff && c.status!=='closed'?`<button class="btn sm" id="aisum">${c.ai?'Refresh AI summary':'AI summary from all documents'}</button>`:''}</h3><div style="line-height:1.6">${esc(c.summary || c.facts || 'No summary yet.')}</div>
+      ${c.facts && c.summary ? `<div class="muted" style="margin-top:10px"><b>Facts recorded:</b> ${esc(c.facts)}</div>`:''}
+      ${staff && c.ai ? `<div style="margin-top:12px;border-top:1px solid #F0ECE3;padding-top:10px"><div class="muted">AI brief · ${new Date(c.ai_at).toLocaleString('en-IN')} · check before relying on it</div>
+        ${[['Timeline',(c.ai.timeline||[]).map(t=>(t.date?t.date+': ':'')+t.event)],['Legal issues',c.ai.issues],['Likely provisions',c.ai.likely_provisions],['Deadlines',c.ai.deadlines],['Next steps',c.ai.next_steps],['Drafts to prepare',c.ai.draft_suggestions]].filter(([k,v])=>v&&v.length).map(([k,v])=>`<div style="margin-top:8px"><b style="font-size:13px;color:#0F2A44">${k}</b><ul style="margin:4px 0 0 18px">${v.map(x=>`<li style="margin:2px 0">${esc(x)}</li>`).join('')}</ul></div>`).join('')}
+        ${(c.ai.skipped||[]).length?`<div class="muted" style="margin-top:6px">Not read (too large): ${esc(c.ai.skipped.join(', '))}</div>`:''}</div>`:''}</div>
+     ${staff?`<div class="card" id="draftsCard"><h3>Drafts <span class="chips"><select id="tpl" style="width:auto">${tpls.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select><button class="btn sm" id="gen">Prepare draft</button></span></h3>
+      ${drafts.map(d=>`<div class="row"><div><b>${esc(d.title)}</b><div class="muted">${fd(d.created_at)} · ${esc(d.status)}</div></div><button class="btn ghost sm" data-draft="${d.id}">Open</button></div>`).join('') || '<div class="muted">No drafts yet. Pick a template and press Prepare draft: it fills in the case facts in seconds.</div>'}</div>`:''}
+     <div class="card"><h3>Hearings ${staff?`<span class="chips"><input type="date" id="hd" style="width:150px;padding:5px"><input id="hp" placeholder="Purpose" style="width:150px;padding:5px"><button class="btn sm navy" id="addh">Add</button></span>`:''}</h3>
+      ${hs.map(h=>`<div class="row"><div><b>${fd(h.hearing_date)}</b> · ${esc(h.purpose)}<div class="muted">${esc(h.outcome_note||(h.hearing_date>=TODAY?'Upcoming':''))}</div></div>${staff && !h.outcome_note && h.hearing_date<=TODAY?`<button class="btn ghost sm" data-hout="${h.id}">Log outcome</button>`:''}</div>`).join('') || '<div class="muted">No hearings yet.</div>'}</div>
+     <div class="card"><h3>Messages with client</h3><div style="max-height:260px;overflow:auto">${msgs.map(m=>`<div class="bubble ${m.sender==='chamber'?'me':'them'}">${esc(m.body)}<div style="font-size:11px;opacity:.6;margin-top:3px">${m.sender==='chamber'?'Chamber':'Client'} · ${fd(m.created_at)}</div></div>`).join('') || '<div class="muted">No messages.</div>'}</div>
+      ${staff?`<div style="display:flex;gap:8px;margin-top:8px"><input id="msg" placeholder="Message to client"><button class="btn" id="send">Send</button></div>`:''}</div>
+    </div>
+    <div class="grid">
+     ${(c.red_flags||[]).length?`<div class="card" style="border-color:#F2B8B8"><h3 style="color:#C62828">Red flags</h3>${c.red_flags.map(r=>`<div class="row">${esc(r)}</div>`).join('')}</div>`:''}
+     ${(c.missing_docs||[]).length?`<div class="card" style="border-color:#F2DC9B"><h3 style="color:#8A6400">Missing documents</h3>${c.missing_docs.map(r=>`<div class="row"><span>${esc(r)}</span>${tag('warn','Requested from client')}</div>`).join('')}</div>`:''}
+     <div class="card"><h3>Documents and audio <label class="btn sm" style="cursor:pointer">Upload<input type="file" id="up" multiple accept=".pdf,.doc,.docx,image/*,audio/*" style="display:none"></label></h3>
+      ${docs.map(d=>`<div class="row"><div>${esc(d.name)}<div class="muted">${esc(d.kind)} · ${d.shared_by==='chamber'?'from chamber':'from client'} · ${fd(d.created_at)}</div>${d.transcript?`<div class="muted" style="margin-top:4px"><b>Transcript:</b> ${esc(d.transcript)}</div>`:''}</div><div class="chips">${tag(d.status==='Reviewed'||d.status==='Signed'?'ok':'info', d.status)}${d.storage_path?`<button class="btn ghost sm" data-dl="${esc(d.storage_path)}">Open</button>`:''}${d.kind==='audio'&&d.storage_path?`<button class="btn ghost sm" data-tr="${d.id}">${d.transcript?'Re-transcribe':'Transcribe'}</button>`:''}</div></div>${d.transcript_en && d.transcript_en!==d.transcript?`<div class="muted" style="margin:-4px 0 8px"><b>English:</b> ${esc(d.transcript_en)}</div>`:''}`).join('') || '<div class="muted">No documents yet.</div>'}</div>
+     ${staff && c.status!=='closed'?`<div class="card"><h3>Update case</h3><div class="grid g2" style="gap:8px">
+       <div><label class="muted">Stage</label><input id="u_stage" value="${esc(c.stage||'')}"></div><div><label class="muted">Next date</label><input type="date" id="u_next" value="${c.next_date||''}"></div>
+       <div><label class="muted">Health</label><select id="u_health">${['On track','Hearing today','Brief pending','Draft ready','Docs missing','Limitation'].map(o=>`<option ${o===c.health?'selected':''}>${o}</option>`).join('')}</select></div>
+       <div><label class="muted">Close with outcome</label><select id="u_out"><option value="">Still open</option><option>Bail granted</option><option>Won</option><option>Settled</option><option>Rejected</option><option>Lost</option></select></div></div>
+       <label class="muted" style="display:block;margin-top:8px">Summary for the file</label><textarea id="u_sum" rows="3">${esc(c.summary||'')}</textarea>
+       <button class="btn navy" id="save" style="margin-top:10px">Save</button></div>`:''}
+     ${sim.length?`<div class="card" id="simCard"><h3>Similar past cases</h3>
+       ${best?`<div class="muted" style="margin-bottom:6px">Why ${best.pct}% for ${esc(best.title)}</div>${[['Offence sections',best.s_sections],['Facts and story',best.s_facts],['Court',best.s_court],['Bench',best.s_bench],['Matter type',best.s_type]].map(([k,v])=>`<div style="margin:6px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${k}</span><b>${v}%</b></div><div class="barw"><div style="width:${v}%;background:${pctColor(v)}"></div></div></div>`).join('')}<div class="muted" style="margin:6px 0 10px">Weighted: sections 30%, facts 35%, court 15%, bench 10%, matter type 10%. A guide, not a prediction.</div>`:''}
+       ${sim.map(s=>`<div style="display:flex;gap:12px;align-items:center;padding:9px 0;border-top:1px solid #F0ECE3">${ring(s.pct)}<div style="flex:1"><b>${esc(s.title)}</b> ${tag(s.outcome==='Rejected'?'bad':'ok', s.outcome)}<div class="muted">${esc(s.court)} · closed ${fd(s.closed_on)}</div><div style="font-size:12.5px;margin-top:3px">${esc(s.what_worked||'')}</div></div><button class="btn ghost sm" onclick="openCase('${s.match_id}')">Open</button></div>`).join('')}
+       <div style="background:#E2F1E8;border-radius:8px;padding:9px 11px;margin-top:8px;font-size:12.5px;color:#1F5E3A">${sim.filter(s=>s.outcome!=='Rejected').length} of ${sim.length} similar cases ended in the client's favour.</div></div>`:''}
+    </div></div>`);
+  $('#back').onclick = e => { e.preventDefault(); S.detail=null; render(); };
+  if($('#tosim')) $('#tosim').onclick = () => $('#simCard').scrollIntoView({behavior:'smooth'});
+  if($('#accept')) $('#accept').onclick = async () => { await q(sb.from('cases').update({status:'active', health:'On track'}).eq('id',c.id)); dirty('cases'); toast('Case accepted and moved to active cases.'); render(); };
+  if($('#gen')) $('#gen').onclick = async () => {
+    const t = S.cache.templates.find(x=>x.id===$('#tpl').value);
+    const cl = (await q(sb.from('clients').select('*').eq('id',c.client_id).maybeSingle())) || {};
+    const fill = {court:c.court||'____', year:new Date().getFullYear(), party:(c.title.split(' v. ')[0]||c.title), client:cl.full_name||'____', title:c.title, facts:c.facts||'[CHECK] Facts not recorded', city:cl.city||'____', today:fd(TODAY)};
+    const body = t.body.replace(/\{\{(\w+)\}\}/g, (_,k)=>fill[k] ?? '____');
+    await q(sb.from('drafts').insert({case_id:c.id, template_id:t.id, title:t.name, body, status:'Draft'}));
+    dirty('drafts'); toast('Draft prepared from the template and case facts.'); render();
+  };
+  document.querySelectorAll('[data-draft]').forEach(b=>b.onclick=()=>draftModal(S.cache.drafts.find(d=>d.id===b.dataset.draft)));
+  if($('#addh')) $('#addh').onclick = async () => { if(!$('#hd').value) return toast('Pick a date'); await q(sb.from('hearings').insert({case_id:c.id, hearing_date:$('#hd').value, purpose:$('#hp').value||'Hearing'})); await q(sb.from('cases').update({next_date:$('#hd').value}).eq('id',c.id)); dirty('hearings','cases'); toast('Hearing added and next date updated.'); render(); };
+  document.querySelectorAll('[data-hout]').forEach(b=>b.onclick=()=>noteModal('Hearing outcome', 'What happened in court?', async v => { await q(sb.from('hearings').update({outcome_note:v}).eq('id',b.dataset.hout)); await q(sb.from('messages').insert({case_id:c.id, client_id:c.client_id, sender:'chamber', body:'Hearing update: '+v})); dirty('hearings','messages'); toast('Outcome saved and the client was updated.'); render(); }));
+  if($('#send')) $('#send').onclick = async () => { const v=$('#msg').value.trim(); if(!v) return; await q(sb.from('messages').insert({case_id:c.id, client_id:c.client_id, sender:'chamber', body:v})); dirty('messages'); render(); };
+  if($('#save')) $('#save').onclick = async () => { const out=$('#u_out').value; const upd={stage:$('#u_stage').value, next_date:$('#u_next').value||null, health:$('#u_health').value, summary:$('#u_sum').value}; if(out){ upd.status='closed'; upd.outcome=out; upd.closed_on=TODAY; upd.stage='Closed'; } await q(sb.from('cases').update(upd).eq('id',c.id)); dirty('cases'); toast('Case saved.'); render(); };
+  $('#up').onchange = e => uploadFiles(e.target.files, c);
+  if($('#sync')) $('#sync').onclick = async () => { const b=$('#sync'); b.disabled=true; b.textContent='Syncing...'; try { const r = await fn('ecourts',{action:'sync', case_id:c.id, cnr:$('#cnr').value.trim()}); dirty('cases','hearings'); toast('Synced: '+(r.result.caseStatus||'')+' · next '+fd(r.result.nextHearingDate)+' · '+r.result.hearings+' hearings'); render(); } catch(e){ toast(e.message); b.disabled=false; b.textContent='Sync from eCourts'; } };
+  if($('#aisum')) $('#aisum').onclick = async () => { const b=$('#aisum'); b.disabled=true; b.textContent='Reading every document...'; try { await fn('ai',{action:'summarize', case_id:c.id}); dirty('cases'); toast('AI brief ready.'); render(); } catch(e){ toast(e.message); b.disabled=false; b.textContent='AI summary from all documents'; } };
+  document.querySelectorAll('[data-tr]').forEach(b=>b.onclick=async()=>{ b.disabled=true; b.textContent='Transcribing...'; try { await fn('ai',{action:'transcribe', document_id:b.dataset.tr}); dirty('documents'); toast('Transcript ready.'); render(); } catch(e){ toast(e.message); b.disabled=false; b.textContent='Transcribe'; } });
+  document.querySelectorAll('[data-dl]').forEach(b=>b.onclick=()=>openFile(b.dataset.dl));
+};
+PAGES['case'].noop = 0;
+
+function draftModal(d){
+  const m = document.createElement('div'); m.className='modal';
+  const hl = esc(d.body).replace(/\[CHECK\][^\n]*/g, x=>`<mark class="y">${x}</mark>`);
+  m.innerHTML = `<div class="card"><h3>${esc(d.title)} <span class="chips">${tag(d.status==='Approved'?'ok':'warn', d.status)}<button class="btn ghost sm" id="x">Close</button></span></h3>
+   <div class="muted" style="margin-bottom:8px">Yellow lines need your attention. Edit freely; nothing goes out until you approve.</div>
+   <div style="background:#FBF8F2;border:1px solid #EAE3D5;border-radius:8px;padding:12px;font-family:Georgia,serif;font-size:13.5px;line-height:1.7;white-space:pre-wrap;margin-bottom:10px">${hl}</div>
+   <textarea id="dbody" rows="12" style="font-family:Georgia,serif">${esc(d.body)}</textarea>
+   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="btn ghost" id="cp">Copy text</button><button class="btn navy" id="sv">Save changes</button><button class="btn green" id="ap">Approve</button></div></div>`;
+  document.body.appendChild(m);
+  const close = () => m.remove();
+  m.querySelector('#x').onclick = close; m.onclick = e => { if(e.target===m) close(); };
+  m.querySelector('#cp').onclick = async () => { try { await navigator.clipboard.writeText(m.querySelector('#dbody').value); toast('Copied. Paste into Word.'); } catch { toast('Copy blocked by the browser; select the text and copy.'); } };
+  m.querySelector('#sv').onclick = async () => { await q(sb.from('drafts').update({body:m.querySelector('#dbody').value}).eq('id',d.id)); dirty('drafts'); close(); toast('Draft saved.'); render(); };
+  m.querySelector('#ap').onclick = async () => { await q(sb.from('drafts').update({body:m.querySelector('#dbody').value, status:'Approved'}).eq('id',d.id)); dirty('drafts'); close(); toast('Draft approved.'); render(); };
+}
+function noteModal(title, label, onOk){
+  const m = document.createElement('div'); m.className='modal';
+  m.innerHTML = `<div class="card" style="width:min(480px,100%)"><h3>${esc(title)}</h3><label class="muted">${esc(label)}</label><textarea id="nv" rows="4"></textarea><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><button class="btn ghost" id="nx">Cancel</button><button class="btn" id="nk">Save</button></div></div>`;
+  document.body.appendChild(m);
+  m.querySelector('#nx').onclick = () => m.remove();
+  m.querySelector('#nk').onclick = async () => { const v=m.querySelector('#nv').value.trim(); if(!v) return; m.remove(); await onOk(v); };
+}
+async function uploadFiles(files, c, clientId){
+  const cid = c ? c.client_id : clientId;
+  for(const f of files){
+    const kind = f.type.startsWith('audio') ? 'audio' : f.type.startsWith('image') ? 'photo' : 'file';
+    const path = `${cid}/${Date.now()}_${f.name.replace(/[^\w.\-]/g,'_')}`;
+    toast('Uploading '+f.name+'...');
+    const { error } = await sb.storage.from('case-files').upload(path, f);
+    if(error){ toast('Upload failed: '+error.message); continue; }
+    const ins = await q(sb.from('documents').insert({case_id:c?.id||null, client_id:cid, name:f.name, kind, storage_path:path, shared_by:S.profile.role==='client'?'client':'chamber', status:'New', size_bytes:f.size}).select().single());
+    if(kind==='audio') fn('ai',{action:'transcribe', document_id:ins.id}).then(()=>{ dirty('documents'); toast('Voice note transcribed.'); }).catch(()=>{});
+  }
+  dirty('documents'); toast('Uploaded.'); render();
+}
+async function openFile(path){
+  const {data, error} = await sb.storage.from('case-files').createSignedUrl(path, 300);
+  if(error) return toast(error.message);
+  window.open(data.signedUrl, '_blank');
+}
+
+PAGES['New intake'] = async () => {
+  await load(['enquiries','cases']);
+  const E = S.cache.enquiries; const intake = S.cache.cases.filter(c=>c.status==='intake');
+  const cols = [['new','New enquiries'],['conflict','Conflict check'],['proposal','Fee proposal sent'],['accepted','Accepted']];
+  const next = {new:'conflict', conflict:'proposal', proposal:'accepted'};
+  page(`<div class="top"><div><h1>New intake</h1><div class="sub">Enquiries move from first message to accepted client. Cases submitted by clients through the portal appear first.</div></div></div>
+   ${intake.length?`<div class="card" style="margin-bottom:14px;border-color:#B08D57"><h3>Submitted by clients through the portal</h3>${intake.map(c=>`<div class="row"><div><b>${esc(c.title)}</b> ${areaTag(c.area)}<div class="muted">${esc(c.clients?.full_name)} · ${fd(c.created_at)} · ${esc((c.facts||'').slice(0,120))}</div></div><button class="btn navy sm" onclick="openCase('${c.id}')">Review</button></div>`).join('')}</div>`:''}
+   <div class="grid g4">${cols.map(([k,t])=>`<div style="background:#EFEBE2;border-radius:10px;padding:12px"><div style="display:flex;justify-content:space-between;font-weight:600;color:#0F2A44;margin-bottom:10px">${t}<span class="muted">${E.filter(e=>e.stage===k).length}</span></div>
+     ${E.filter(e=>e.stage===k).map(e=>`<div class="card" style="padding:12px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;gap:6px"><b>${esc(e.name)}</b>${areaTag(e.area)}</div><div class="muted" style="margin:6px 0">${esc(e.summary)} · via ${esc(e.source)}</div>${e.note?tag(k==='conflict'?'warn':'info', e.note):''}${next[k]?`<div style="margin-top:8px"><button class="btn ghost sm" data-mv="${e.id}" data-to="${next[k]}">Move on &rarr;</button></div>`:''}</div>`).join('')}</div>`).join('')}</div>`);
+  document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=async()=>{ await q(sb.from('enquiries').update({stage:b.dataset.to}).eq('id',b.dataset.mv)); dirty('enquiries'); render(); });
+};
+
+PAGES['Drafts'] = async () => {
+  await load(['drafts']);
+  page(`<div class="top"><div><h1>Drafts</h1><div class="sub">Prepare a draft from any case page. Every draft waits for your approval.</div></div></div>
+   <div class="card" style="overflow:auto"><table><tr><th>Draft</th><th>Case</th><th>Area</th><th>Created</th><th>Status</th><th></th></tr>
+   ${S.cache.drafts.map(d=>`<tr><td><b>${esc(d.title)}</b></td><td><a href="#" onclick="openCase('${d.case_id}');return false">${esc(d.cases?.title)}</a></td><td>${areaTag(d.cases?.area)}</td><td>${fd(d.created_at)}</td><td>${tag(d.status==='Approved'?'ok':'warn', d.status)}</td><td><button class="btn ghost sm" data-draft="${d.id}">Open</button></td></tr>`).join('') || '<tr><td colspan="6" class="muted">No drafts yet. Open a case, pick a template and press Prepare draft.</td></tr>'}</table></div>`);
+  document.querySelectorAll('[data-draft]').forEach(b=>b.onclick=()=>draftModal(S.cache.drafts.find(d=>d.id===b.dataset.draft)));
+};
+
+PAGES['Court calendar'] = async () => {
+  await load(['hearings']);
+  const start = pd(TODAY); const days = [...Array(14)].map((_,i)=>{ const d=new Date(start); d.setDate(d.getDate()+i); return iso(d); });
+  const H = S.cache.hearings;
+  page(`<div class="top"><div><h1>Court calendar</h1><div class="sub">Next 14 days · cases with a CNR update from eCourts</div></div><button class="btn navy" id="syncall">Sync all cases from eCourts</button></div>
+   <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))">${days.map(d=>{ const list=H.filter(h=>h.hearing_date===d); return `<div class="card" style="padding:12px;${d===TODAY?'border:2px solid #B08D57':''}"><b style="color:#0F2A44">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][pd(d).getDay()]} ${fdShort(d)}</b>${list.map(h=>`<div style="margin-top:8px;cursor:pointer" onclick="openCase('${h.case_id}')">${areaTag(h.cases?.area)}<div style="font-size:12.5px;margin-top:3px">${esc(h.cases?.title)}</div><div class="muted">${esc(h.purpose)}</div></div>`).join('') || '<div class="muted" style="margin-top:8px">No hearings</div>'}</div>`; }).join('')}</div>`);
+};
+
+document.addEventListener('click', async e => { if(e.target.id!=='syncall') return; const b=e.target; b.disabled=true; b.textContent='Syncing...'; try { const r = await fn('ecourts',{action:'sync_all'}); dirty('cases','hearings'); toast(r.synced+' cases synced'+(r.errors.length?' · '+r.errors.length+' need attention: '+r.errors[0]:'')); render(); } catch(err){ toast(err.message); b.disabled=false; b.textContent='Sync all cases from eCourts'; } });
+PAGES['Clients'] = async () => {
+  await load(['clients','cases','invoices','messages']);
+  const C = S.cache; const sel = S.view.client || C.clients[0]?.id; const cl = C.clients.find(x=>x.id===sel);
+  const cc = C.cases.filter(c=>c.client_id===sel); const inv = C.invoices.filter(i=>i.client_id===sel);
+  const billed = inv.reduce((a,i)=>a+Number(i.amount),0), paid = inv.filter(i=>i.paid_on).reduce((a,i)=>a+Number(i.amount),0);
+  const agreed = cc.reduce((a,c)=>a+Number(c.fee_agreed||0),0);
+  page(`<div class="top"><div><h1>Clients</h1><div class="sub">${C.clients.length} clients · ${new Set(C.cases.filter(c=>c.status==='active').map(c=>c.client_id)).size} with active matters</div></div></div>
+   <div class="grid" style="grid-template-columns:300px 1fr">
+    <div class="card" style="padding:6px 12px">${C.clients.map(x=>`<div class="row click" data-cl="${x.id}" style="cursor:pointer;${x.id===sel?'background:#F3EEE3;margin:0 -12px;padding:9px 12px':''}"><div><b>${esc(x.full_name)}</b><div class="muted">${C.cases.filter(c=>c.client_id===x.id&&c.status!=='closed').length} active · ${esc(x.language)}</div></div></div>`).join('')}</div>
+    ${cl?`<div class="grid g2" style="align-content:start">
+     <div class="card"><h3>${esc(cl.full_name)}</h3>${[['Mobile',cl.phone],['Email',cl.email],['Language',cl.language],['City',cl.city],['Client since',fd(cl.client_since)],['Referred by',cl.referred_by]].map(([k,v])=>`<div class="row"><span class="muted">${k}</span><span>${esc(v||'-')}</span></div>`).join('')}</div>
+     <div class="card"><h3>Matters</h3>${cc.map(c=>`<div class="row click" style="cursor:pointer" onclick="openCase('${c.id}')"><div><b>${esc(c.title)}</b><div class="muted">${esc(c.status==='closed'?c.outcome:c.stage)}</div></div>${areaTag(c.area)}</div>`).join('')||'<div class="muted">None</div>'}
+      <h3 style="margin-top:12px">Money</h3><div class="row"><span>Agreed</span><b>${inr(agreed)}</b></div><div class="row"><span>Billed</span><span>${inr(billed)}</span></div><div class="row"><span>Received</span><span>${inr(paid)}</span></div><div class="row"><span>Due</span><b style="color:#8A6400">${inr(billed-paid)}</b></div></div>
+     <div class="card" style="grid-column:span 2"><h3>Communication log</h3>${C.messages.filter(m=>m.client_id===sel).slice(-6).reverse().map(m=>`<div class="row"><div>${fd(m.created_at)} · <b>${m.sender==='chamber'?'Chamber':'Client'}</b>: ${esc(m.body)}</div></div>`).join('')||'<div class="muted">No messages yet.</div>'}</div></div>`:''}</div>`);
+  document.querySelectorAll('[data-cl]').forEach(r=>r.onclick=()=>{ S.view.client=r.dataset.cl; render(); });
+};
+
+PAGES['Law updates'] = async () => {
+  await load(['law_updates']);
+  page(`<div class="top"><div><h1>Law updates</h1><div class="sub">Changes in law mapped to your live cases</div></div><button class="btn" id="addl">Add update</button></div>
+   ${S.cache.law_updates.map(l=>`<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between"><div>${tag(l.level==='High'?'bad':l.level==='Medium'?'warn':'info', l.level)} <span class="muted">${esc(l.source)} · ${fd(l.published_on)}</span></div><span class="muted">Affects ${esc(l.affects)}</span></div><div style="font-weight:600;color:#0F2A44;margin:8px 0 4px">${esc(l.title)}</div><div>${esc(l.body)}</div></div>`).join('')}
+   <div class="muted">In the full product the research associate fills this automatically from court and gazette sources. In this demo you can add updates by hand.</div>`);
+  $('#addl').onclick = () => noteModal('New law update', 'Title of the change', async v => { await q(sb.from('law_updates').insert({level:'Info', source:'Added by chamber', title:v, body:'Added manually.', area:'Any', affects:'To be mapped'})); dirty('law_updates'); render(); });
+};
+
+PAGES['Accounts'] = async () => {
+  await load(['invoices','expenses','clients','cases']);
+  const I = S.cache.invoices, X = S.cache.expenses; const R = range(S.view.acc);
+  const m = r => ({
+    billed: I.filter(i=>inR(i.issued_on,r)).reduce((a,i)=>a+Number(i.amount),0),
+    collected: I.filter(i=>inR(i.paid_on,r)).reduce((a,i)=>a+Number(i.amount),0),
+    outstanding: I.filter(i=>pd(i.issued_on)<=r.b && (!i.paid_on || pd(i.paid_on)>r.b)).reduce((a,i)=>a+Number(i.amount),0),
+    expenses: X.filter(x=>inR(x.spent_on,r)).reduce((a,x)=>a+Number(x.amount),0)
+  });
+  const cur = m(R), prv = R.c ? m(R.c) : null;
+  const areas = ['Criminal','Civil','Labour','Matrimonial','Other'];
+  const byArea = r => { const o={}; areas.forEach(a=>o[a]=0); I.filter(i=>inR(i.paid_on,r)).forEach(i=>{ const a=i.cases?.area||'Other'; o[a]+=Number(i.amount); }); return o; };
+  const ca = byArea(R), pa = R.c ? byArea(R.c) : null;
+  const list = I.filter(i=>inR(i.issued_on,R) || inR(i.paid_on,R));
+  const st = i => i.paid_on ? tag('ok','Paid '+(i.method||'')) : (i.due_on && i.due_on<TODAY ? tag('bad','Overdue '+Math.round((pd(TODAY)-pd(i.due_on))/864e5)+' days') : tag('warn','Due'));
+  const kc = (label, k, col, low) => `<div class="card"><div class="muted">${label}</div><div class="kpi" style="color:${col}">${inr(cur[k])}</div>${prv?`<div class="muted">Comparison: ${inr(prv[k])}</div>${change(cur[k],prv[k],low)}`:''}</div>`;
+  page(`<div class="top"><div><h1>Accounts</h1><div class="sub">Fees billed and collected. Amounts before GST.</div></div><button class="btn" id="newinv">Raise invoice</button></div>
+   ${periodBar('acc')}
+   <div class="grid g4" style="margin-bottom:14px">${kc('Billed','billed','#0F2A44')}${kc('Collected','collected','#2E7D4F')}${kc('Outstanding at period end','outstanding','#8A6400',true)}${kc('Case expenses','expenses','#0F2A44',true)}</div>
+   <div class="grid" style="grid-template-columns:1.5fr 1fr">
+    <div class="card" style="overflow:auto"><h3>Invoices in this period <span class="muted">${list.length}</span></h3><table><tr><th>Invoice</th><th>Client</th><th>Issued</th><th>Amount</th><th>Due</th><th>Status</th><th></th></tr>
+     ${list.map(i=>`<tr><td>${esc(i.number)}</td><td>${esc(i.clients?.full_name)}</td><td>${fdShort(i.issued_on)}</td><td>${inr(i.amount)}</td><td>${fdShort(i.due_on)}</td><td>${st(i)}</td><td>${i.paid_on?'':`<button class="btn ghost sm" data-paid="${i.id}">Mark paid</button>`}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">No invoices in this period. Try Month with October 2026, or All time.</td></tr>'}</table></div>
+    <div class="card"><h3>Collections by area</h3><table><tr><th>Area</th><th>This period</th>${pa?'<th>Comparison</th><th>Change</th>':''}</tr>
+     ${areas.filter(a=>ca[a]||(pa&&pa[a])).map(a=>`<tr><td>${areaTag(a==='Other'?'Any':a).replace('Any','Other')}</td><td>${inr(ca[a])}</td>${pa?`<td>${inr(pa[a])}</td><td>${pa[a]?`<b style="color:${ca[a]>=pa[a]?'#2E7D4F':'#C62828'}">${((ca[a]-pa[a])/pa[a]*100>0?'+':'')+((ca[a]-pa[a])/pa[a]*100).toFixed(1)}%</b>`:(ca[a]?'new':'-')}</td>`:''}</tr>`).join('')}
+     <tr><td><b>Total</b></td><td><b>${inr(cur.collected)}</b></td>${pa?`<td><b>${inr(prv.collected)}</b></td><td>${prv.collected?`<b>${((cur.collected-prv.collected)/prv.collected*100>0?'+':'')+((cur.collected-prv.collected)/prv.collected*100).toFixed(1)}%</b>`:'-'}</td>`:''}</tr></table></div></div>`);
+  document.querySelectorAll('[data-paid]').forEach(b=>b.onclick=async()=>{ await q(sb.from('invoices').update({paid_on:TODAY, method:'UPI'}).eq('id',b.dataset.paid)); dirty('invoices'); toast('Marked as paid today.'); render(); });
+  $('#newinv').onclick = () => invoiceModal();
+};
+function invoiceModal(){
+  const C = S.cache; const m = document.createElement('div'); m.className='modal';
+  m.innerHTML = `<div class="card" style="width:min(520px,100%)"><h3>Raise invoice</h3><div class="grid g2" style="gap:10px">
+   <div style="grid-column:span 2"><label class="muted">Case</label><select id="ic">${C.cases.filter(c=>c.status!=='closed').map(c=>`<option value="${c.id}" data-cl="${c.client_id}">${esc(c.title)} · ${esc(c.clients?.full_name)}</option>`).join('')}</select></div>
+   <div><label class="muted">Amount (Rs, before GST)</label><input id="ia" type="number" min="1"></div><div><label class="muted">Due date</label><input id="idue" type="date"></div></div>
+   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn ghost" id="ix">Cancel</button><button class="btn" id="ik">Create</button></div></div>`;
+  document.body.appendChild(m);
+  m.querySelector('#ix').onclick = () => m.remove();
+  m.querySelector('#ik').onclick = async () => {
+    const o = m.querySelector('#ic').selectedOptions[0]; const amt = Number(m.querySelector('#ia').value); if(!amt) return toast('Enter an amount');
+    const n = 'INV-' + (1143 + Math.floor((Date.now()/1000)%8000));
+    await q(sb.from('invoices').insert({number:n, case_id:o.value, client_id:o.dataset.cl, amount:amt, issued_on:TODAY, due_on:m.querySelector('#idue').value||null}));
+    m.remove(); dirty('invoices'); toast(n+' created. The client sees it under Payments.'); render();
+  };
+}
+
+PAGES['My Chamber'] = async () => {
+  await load(['chamber_roles']);
+  page(`<div class="top"><div><h1>My Chamber</h1><div class="sub">12 team members, each with a playbook. ${S.cache.chamber_roles.reduce((a,r)=>a+r.tasks_today,0)} tasks today.</div></div></div>
+   <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">${S.cache.chamber_roles.map(r=>`<div class="card"><div style="display:flex;gap:10px;align-items:center"><div style="width:34px;height:34px;border-radius:50%;background:#0F2A44;color:#B08D57;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center">${esc(r.abbrev)}</div><div><b style="color:#0F2A44">${esc(r.name)}</b><div class="muted">${esc(r.current_task)}</div></div></div><div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12.5px"><span>${r.tasks_today} tasks today</span><span style="color:#2E7D4F">${esc(r.approval)}${/%$/.test(r.approval)?' approved as is':''}</span></div></div>`).join('')}</div>
+   <div class="muted" style="margin-top:14px">In this demo, drafting uses your templates and case facts. Connecting an AI model adds automatic summaries, reading of uploaded documents and audio transcription.</div>`);
+};
+PAGES['Settings'] = async () => {
+  page(`<div class="top"><div><h1>Settings</h1><div class="sub">Demo settings</div></div></div>
+   <div class="grid g3"><div class="card"><h3>Chamber profile</h3><div class="row"><span class="muted">Chamber name</span><span>Takshila</span></div><div class="row"><span class="muted">Client languages</span><span>Hindi, English</span></div><div class="row"><span class="muted">Data stored in</span><span>Mumbai, India</span></div></div>
+   <div class="card"><h3>Approval rules</h3><div class="row"><span>Drafts need my approval</span>${tag('ok','On')}</div><div class="row"><span>Hearing outcome updates go to client</span>${tag('ok','On')}</div><div class="row"><span>Clients can only see their own matters</span>${tag('ok','Enforced')}</div></div>
+   <div class="card"><h3>Your login</h3><div class="row"><span class="muted">Name</span><span>${esc(S.profile.full_name)}</span></div><div class="row"><span class="muted">Role</span><span>${esc(S.profile.role)}</span></div><div class="row"><span class="muted">Email</span><span>${esc(S.user.email)}</span></div></div></div>`);
+};
+
+/* ---------- CLIENT PAGES ---------- */
+PAGES['Home'] = async () => {
+  await load(['cases','hearings','invoices','messages']);
+  const C = S.cache; const mine = C.cases;
+  const next = C.hearings.filter(h=>h.hearing_date>=TODAY)[0];
+  const due = C.invoices.filter(i=>!i.paid_on);
+  const todo = mine.flatMap(c=>(c.missing_docs||[]).map(d=>({c, d})));
+  const last = [...C.messages].reverse().find(m=>m.sender==='chamber');
+  const first = (S.profile.full_name||'').split(' ')[0];
+  page(`<div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-bottom:18px"><div><h1 style="font-size:26px">Namaste, ${esc(first)}</h1><div class="sub">Here is where your matters stand today, ${fd(TODAY)}.</div></div>
+    <div class="chips"><button class="btn ghost" data-tab2="Messages">Message the chamber</button><button class="btn" data-tab2="My cases" data-new="1">Start a new case</button></div></div>
+   <div class="grid" style="grid-template-columns:1.35fr 1fr">
+    <div class="grid">
+     ${next?`<div class="card" style="background:#0F2A44;color:#fff;border:none"><div style="color:#B08D57;font-size:12.5px;font-weight:700">NEXT HEARING</div><div style="font-size:22px;font-weight:700;margin-top:6px">${next.hearing_date===TODAY?'Today':fd(next.hearing_date)} · ${esc(next.cases?.court)}</div><div style="color:#C9D3DE;margin-top:4px">${esc(next.cases?.title)} · ${esc(next.purpose)}</div></div>`:'<div class="card">No upcoming hearings.</div>'}
+     <div class="card"><h3>Things you need to do</h3>
+      ${todo.map(t=>`<div class="row"><div><b>Upload: ${esc(t.d)}</b><div class="muted">${esc(t.c.title)} · a photo is fine</div></div><button class="btn sm" data-tab2="Documents">Upload</button></div>`).join('')}
+      ${due.map(i=>`<div class="row"><div><b>Pay ${inr(i.amount)}</b><div class="muted">${esc(i.number)} · due ${fd(i.due_on)}</div></div><button class="btn ghost sm" data-tab2="Payments">Pay</button></div>`).join('')}
+      ${!todo.length && !due.length ? '<div class="muted">Nothing pending. You are all set.</div>':''}</div></div>
+    <div class="grid"><div class="card"><h3>My cases</h3>${mine.map(c=>`<div class="row click" style="cursor:pointer" onclick="openCase('${c.id}')"><div><b>${esc(c.title)}</b><div class="muted">${esc(c.matter_type||c.area)} · ${esc(c.status==='intake'?'Sent to chamber':c.stage)}</div></div>${c.next_date?tag(c.next_date===TODAY?'warn':'info', c.next_date===TODAY?'Hearing today':'Next '+fdShort(c.next_date)):tag('grey', c.status==='intake'?'Under review':'-')}</div>`).join('') || '<div class="muted">No cases yet.</div>'}</div>
+     <div class="card"><h3>Latest from the chamber</h3>${last?`<div style="background:#F6F1E6;border-radius:12px;padding:12px;line-height:1.55">${esc(last.body)}<div class="muted" style="margin-top:6px">${fd(last.created_at)}</div></div>`:'<div class="muted">No messages yet.</div>'}</div></div></div>`);
+  document.querySelectorAll('[data-tab2]').forEach(b=>b.onclick=()=>{ S.tab=b.dataset.tab2; S.newCase=!!b.dataset.new; render(); });
+};
+PAGES['My cases'] = async () => {
+  await load(['cases']);
+  const mine = S.cache.cases;
+  const STAGES = ['Case received','Documents reviewed','Draft ready','Hearing','Order'];
+  const idx = c => c.status==='intake'?0:c.status==='closed'?5:c.stage==='Bail hearing'||c.next_date===TODAY?3:c.stage==='Draft ready'?2:1;
+  page(`<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;gap:10px"><div><h1>My cases</h1><div class="sub">Tap a case to see hearings, documents and messages.</div></div><button class="btn" id="nc">Start a new case</button></div>
+   <div id="ncform"></div>
+   ${mine.map(c=>`<div class="card" style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><b style="font-size:16px;color:#0F2A44">${esc(c.title)}</b> ${areaTag(c.area)}<div class="muted">${esc(c.court||'Court to be decided')} · ${c.next_date?'next date '+fd(c.next_date):c.status==='intake'?'sent to the chamber '+fd(c.created_at):''}</div></div><button class="btn ghost sm" onclick="openCase('${c.id}')">Open</button></div>
+    <div class="steps" style="margin-top:14px">${STAGES.map((s,i)=>`<div class="step"><div class="dot ${i<idx(c)?'d1':i===idx(c)?'d2':'d3'}">${i+1}</div>${s}</div>`).join('')}</div></div>`).join('')}`);
+  const show = () => {
+    $('#ncform').innerHTML = `<div class="card" style="margin-bottom:16px;border:2px solid #B08D57"><h3>Tell us what happened</h3>
+     <div class="grid g2" style="gap:10px"><div><label class="muted">Type of matter</label><select id="n_area"><option value="Criminal">Police case or arrest</option><option value="Civil">Property or money dispute</option><option value="Labour">Job or salary issue</option><option value="Matrimonial">Marriage or family</option></select></div>
+     <div><label class="muted">Short title (for example: my brother's bail)</label><input id="n_title"></div>
+     <div style="grid-column:span 2"><label class="muted">Your story, in your own words</label><textarea id="n_facts" rows="4"></textarea></div>
+     <div><label class="muted">Other side (name, if known)</label><input id="n_other"></div>
+     <div><label class="muted">Documents, photos and audio (optional)</label><input type="file" id="n_files" multiple accept=".pdf,.doc,.docx,image/*,audio/*"></div></div>
+     <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap"><button class="btn red" id="rec">&#9679; Record a voice note</button><span class="muted" id="recst"></span></div>
+     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn ghost" id="ncx">Cancel</button><button class="btn" id="ncs">Send to the chamber</button></div></div>`;
+    let recorder=null, chunks=[], voice=null;
+    $('#rec').onclick = async () => {
+      if(recorder && recorder.state==='recording'){ recorder.stop(); return; }
+      try { const st = await navigator.mediaDevices.getUserMedia({audio:true}); recorder = new MediaRecorder(st); chunks=[];
+        recorder.ondataavailable = e => chunks.push(e.data);
+        recorder.onstop = () => { voice = new File(chunks, 'Voice_note_'+Date.now()+'.webm', {type:'audio/webm'}); st.getTracks().forEach(t=>t.stop()); $('#rec').innerHTML='&#9679; Record again'; $('#recst').textContent='Voice note ready ('+Math.round(voice.size/1024)+' KB). It will be sent with your case.'; };
+        recorder.start(); $('#rec').textContent='Stop recording'; $('#recst').textContent='Recording...';
+      } catch(e){ toast('Microphone not available: '+e.message); }
+    };
+    $('#ncx').onclick = () => { $('#ncform').innerHTML=''; };
+    $('#ncs').onclick = async () => {
+      const facts = $('#n_facts').value.trim(); if(!facts && !voice) return toast('Please write your story or record a voice note.');
+      $('#ncs').disabled = true;
+      const area = $('#n_area').value; const title = ($('#n_title').value.trim() || 'New '+area.toLowerCase()+' matter') + ($('#n_other').value.trim()?' v. '+$('#n_other').value.trim():'');
+      const c = await q(sb.from('cases').insert({title, area, matter_type:$('#n_area').selectedOptions[0].text, client_id:S.profile.client_id, status:'intake', stage:'Sent to chamber', health:'Docs missing', facts: facts || 'See voice note.', filed_on:TODAY}).select().single());
+      const files = [...$('#n_files').files]; if(voice) files.push(voice);
+      if(files.length) await uploadFiles(files, c); else { dirty('cases'); render(); }
+      dirty('cases'); S.newCase=false; toast('Sent. The chamber will review it and reply here.'); render();
+    };
+  };
+  $('#nc').onclick = show; if(S.newCase){ S.newCase=false; show(); }
+};
+PAGES['Documents'] = async () => {
+  await load(['documents','cases']);
+  const D = S.cache.documents; const mine = S.cache.cases;
+  const row = d => `<div class="row"><div>${esc(d.name)}<div class="muted">${esc(d.kind)} · ${esc(d.cases?.title||'')} · ${fd(d.created_at)}</div>${d.transcript?`<div class="muted" style="margin-top:3px"><b>Transcript:</b> ${esc(d.transcript)}</div>`:''}</div><div class="chips">${tag(d.status==='Reviewed'||d.status==='Signed'?'ok':d.status==='Needs signature'?'warn':'info', d.status)}${d.storage_path?`<button class="btn ghost sm" data-dl="${esc(d.storage_path)}">Open</button>`:''}</div></div>`;
+  page(`<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;gap:10px"><div><h1>Documents</h1><div class="sub">Private to you and the chamber. Files, photos and audio are all welcome.</div></div>
+    <div class="chips"><select id="dcase" style="width:auto">${mine.map(c=>`<option value="${c.id}">${esc(c.title)}</option>`).join('')}</select><label class="btn" style="cursor:pointer">Upload<input type="file" id="dup" multiple accept=".pdf,.doc,.docx,image/*,audio/*" style="display:none"></label></div></div>
+   <div class="grid g2"><div class="card"><h3>Shared by you</h3>${D.filter(d=>d.shared_by==='client').map(row).join('')||'<div class="muted">Nothing yet.</div>'}</div>
+    <div class="card"><h3>From the chamber</h3>${D.filter(d=>d.shared_by==='chamber').map(row).join('')||'<div class="muted">Nothing yet.</div>'}</div></div>`);
+  $('#dup').onchange = e => { const c = mine.find(x=>x.id===$('#dcase').value); uploadFiles(e.target.files, c, S.profile.client_id); };
+  document.querySelectorAll('[data-dl]').forEach(b=>b.onclick=()=>openFile(b.dataset.dl));
+};
+PAGES['Payments'] = async () => {
+  await load(['invoices','cases']);
+  const I = S.cache.invoices; const R = range(S.view.pay);
+  const m = r => ({ paid: I.filter(i=>inR(i.paid_on,r)).reduce((a,i)=>a+Number(i.amount),0), billed: I.filter(i=>inR(i.issued_on,r)).reduce((a,i)=>a+Number(i.amount),0), due: I.filter(i=>pd(i.issued_on)<=r.b && (!i.paid_on||pd(i.paid_on)>r.b)).reduce((a,i)=>a+Number(i.amount),0) });
+  const cur = m(R), prv = R.c ? m(R.c) : null;
+  const agreed = S.cache.cases.reduce((a,c)=>a+Number(c.fee_agreed||0),0), paidAll = I.filter(i=>i.paid_on).reduce((a,i)=>a+Number(i.amount),0);
+  const list = I.filter(i=>inR(i.issued_on,R)||inR(i.paid_on,R));
+  const card = (label,k,col,low) => `<div class="card"><div class="muted">${label}</div><div class="kpi" style="color:${col}">${inr(cur[k])}</div>${prv?`<div class="muted">Comparison: ${inr(prv[k])}</div>${change(cur[k],prv[k],low)}`:''}</div>`;
+  const dueNow = I.filter(i=>!i.paid_on);
+  page(`<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px;flex-wrap:wrap;gap:10px"><div><h1>Payments</h1><div class="sub">All time: agreed ${inr(agreed)} · paid ${inr(paidAll)} · amounts before GST</div></div>${dueNow.length?`<button class="btn" id="pay">Pay ${inr(dueNow[0].amount)} now</button>`:''}</div>
+   ${periodBar('pay')}
+   <div class="grid g3" style="margin-bottom:14px">${card('Paid in period','paid','#2E7D4F')}${card('Billed in period','billed','#0F2A44')}${card('Due at period end','due','#8A6400',true)}</div>
+   <div class="card" style="overflow:auto"><h3>Invoices and receipts in this period</h3><table><tr><th>Invoice</th><th>Case</th><th>Issued</th><th>Amount</th><th>Status</th></tr>
+    ${list.map(i=>`<tr><td>${esc(i.number)}</td><td>${esc(i.cases?.title||'')}</td><td>${fd(i.issued_on)}</td><td>${inr(i.amount)}</td><td>${i.paid_on?tag('ok','Paid '+fd(i.paid_on)):tag('warn','Due '+fd(i.due_on))}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">Nothing in this period. Try another period or All time.</td></tr>'}</table></div>`);
+  if($('#pay')) $('#pay').onclick = () => toast('Demo: online payment (UPI, card, net banking) connects here through a payment gateway.');
+};
+PAGES['Messages'] = async () => {
+  await load(['messages','cases']);
+  const mine = S.cache.cases; const sel = S.view.mcase || mine[0]?.id;
+  const msgs = S.cache.messages.filter(m=>m.case_id===sel);
+  page(`<div class="grid" style="grid-template-columns:280px 1fr">
+   <div class="card" style="padding:10px"><h3 style="padding:4px">Conversations</h3>${mine.map(c=>`<div data-mc="${c.id}" style="padding:10px;border-radius:10px;cursor:pointer;${c.id===sel?'background:#F6F1E6':''}"><b>${esc(c.title)}</b><div class="muted">${S.cache.messages.filter(m=>m.case_id===c.id).length} messages</div></div>`).join('')}</div>
+   <div class="card" style="display:flex;flex-direction:column;min-height:420px"><h3>${esc(mine.find(c=>c.id===sel)?.title||'')}<span class="muted">The chamber usually replies within 2 hours</span></h3>
+    <div style="flex:1;background:#FBF8F2;border-radius:10px;padding:10px;overflow:auto;max-height:55vh" id="thread">${msgs.map(m=>`<div class="bubble ${m.sender==='client'?'me':'them'}">${esc(m.body)}<div style="font-size:11px;opacity:.6;margin-top:3px">${m.sender==='client'?'You':'Chamber'} · ${fd(m.created_at)}</div></div>`).join('')||'<div class="muted">No messages yet.</div>'}</div>
+    <div style="display:flex;gap:8px;margin-top:10px"><input id="cm" placeholder="Type a message"><button class="btn" id="cs">Send</button></div>
+    <div class="muted" style="margin-top:6px">To send a voice note, use Documents or Start a new case: audio files are saved to your case.</div></div></div>`);
+  const th = $('#thread'); th.scrollTop = th.scrollHeight;
+  document.querySelectorAll('[data-mc]').forEach(d=>d.onclick=()=>{ S.view.mcase=d.dataset.mc; render(); });
+  $('#cs').onclick = async () => { const v=$('#cm').value.trim(); if(!v||!sel) return; await q(sb.from('messages').insert({case_id:sel, client_id:S.profile.client_id, sender:'client', body:v})); dirty('messages'); render(); };
+  $('#cm').onkeydown = e => { if(e.key==='Enter') $('#cs').click(); };
+};
+</script>
+</body>
+</html>
