@@ -137,6 +137,16 @@ table.dt tr.fr input{padding:4px 7px;font-size:12px;border-radius:6px;min-width:
 #toTop.show{opacity:.85;pointer-events:auto;transform:none}
 #toTop:hover{opacity:1;background:rgba(255,255,255,.85)}
 @media (max-width:900px){.g5,.grid:has(> .kpicard){grid-template-columns:1fr 1fr!important}.cd{min-height:56px}.cev{display:none}.cal{grid-template-columns:repeat(7,1fr)!important}.lane{min-height:0}#toTop{right:14px;bottom:14px}}
+.bell{position:relative;background:#fff;border:1px solid #E0D6C2;border-radius:50%;width:36px;height:36px;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.bell.dark{background:#18395A;border-color:#2A4D70}
+.bellcount{position:absolute;top:-5px;right:-6px;background:#C62828;color:#fff;border-radius:10px;font-size:10.5px;font-weight:700;padding:1px 5px;min-width:18px;text-align:center;border:2px solid #fff}
+.mnav .bell{width:auto;height:auto;border-radius:14px;background:#18395A;border:none;padding:6px 11px}
+.bdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:6px;align-self:flex-start}
+.bdot.high{background:#C62828}.bdot.mid{background:#E0A100}.bdot.low{background:#2F6FB0}
+.bitem{align-items:flex-start}.bitem.read{opacity:.55}
+.paybadge{width:52px;height:52px;border-radius:50%;background:#FCF1CF;color:#8A6400;font-size:26px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
+.paybadge.over{background:#FBE1E1;color:#C62828}
+.paymodal .card{width:min(520px,100%)}
 </style></head><body><div id="root"></div><div class="toast" id="toast"></div><script>
 /* ===== Takshila core: helpers, state, periods, drill-down, live search ===== */
 const SB_URL = 'https://ixhkncqgbdrsxuvxcwgg.supabase.co';
@@ -352,10 +362,13 @@ async function boot(session){
   const st = await sb.from('settings').select('data').eq('id',1).maybeSingle();
   S.settings = st.data?.data || {};
   S.profile = p; S.cache = {}; S.detail = null;
+  const ns = await sb.from('notif_state').select('seen').eq('user_id', S.user.id).maybeSingle();
+  S.seen = new Set(ns.data?.seen || []);
   S.view = { acc:newPeriod('Month'), pay:newPeriod('Month'), hist:newPeriod('All time','Same period last year'), dash:newPeriod('3 months'), drafts:newPeriod('All time'),
     chamber:newPeriod('1 year'), law:newPeriod('All time'), clients:{}, cases:{status:'active'}, cal:{month:TODAY.slice(0,7), day:TODAY, area:'All', court:'All'}, cl:{}, draftTab:'Drafts' };
   S.tab = p.role==='client' ? 'Home' : 'Morning brief';
-  render();
+  await render();
+  if(p.role==='client' && S.settings.payment_popup!==false) duePopup().catch(()=>{});
 }
 sb.auth.onAuthStateChange((ev, session) => { if(ev==='SIGNED_IN' || ev==='SIGNED_OUT' || ev==='INITIAL_SESSION'){ if(ev==='SIGNED_IN' && S.user && session && S.user.id===session.user.id) return; boot(session); } });
 
@@ -394,18 +407,18 @@ async function render(){
   if(S.profile.role==='client'){
     root.innerHTML = `<div class="client"><div class="cbar"><div class="cbrand"><div class="mark">T</div>${esc(S.settings.chamber_name||'Takshila')} <span class="muted" style="font-weight:500;border-left:1px solid #E0D6C2;padding-left:10px">Client portal</span></div>
       <div class="ctabs">${CTABS.map(t=>`<button class="${t===S.tab&&!S.detail?'on':''}" data-tab="${t}">${t}</button>`).join('')}</div>
-      <div style="display:flex;gap:10px;align-items:center"><span class="muted cname">${esc(S.profile.full_name)}</span><button class="btn ghost sm" id="out">Sign out</button></div></div>
+      <div style="display:flex;gap:10px;align-items:center"><button class="bell" aria-label="Reminders">&#128276;<span class="bellcount" style="display:none"></span></button><span class="muted cname">${esc(S.profile.full_name)}</span><button class="btn ghost sm" id="out">Sign out</button></div></div>
       <div class="cwrap" id="page"><div class="muted">Loading...</div></div></div><button id="toTop" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593;</button>`;
   } else {
-    root.innerHTML = `<div class="app"><div class="side"><div class="logo"><div class="mark">T</div>${esc(S.settings.chamber_name||'Takshila')}</div><div class="nav">${LTABS.map(t=>`<button class="${t===S.tab?'on':''}" data-tab="${t}">${t}</button>`).join('')}</div>
+    root.innerHTML = `<div class="app"><div class="side"><div class="logo"><div class="mark">T</div><span style="flex:1">${esc(S.settings.chamber_name||'Takshila')}</span><button class="bell dark" aria-label="Reminders">&#128276;<span class="bellcount" style="display:none"></span></button></div><div class="nav">${LTABS.map(t=>`<button class="${t===S.tab?'on':''}" data-tab="${t}">${t}</button>`).join('')}</div>
       <div style="padding:20px;font-size:12px;color:#8FA3B8">Signed in as ${esc(S.profile.full_name)} (${esc(S.profile.role)})<br><button class="btn ghost sm" id="out" style="margin-top:8px">Sign out</button></div></div>
-      <div style="flex:1;min-width:0"><div class="mnav">${LTABS.map(t=>`<button class="${t===S.tab?'on':''}" data-tab="${t}">${t}</button>`).join('')}<button id="out2">Sign out</button></div><div class="main" id="page"><div class="muted">Loading...</div></div></div></div>
+      <div style="flex:1;min-width:0"><div class="mnav"><button class="bell" aria-label="Reminders" style="position:relative">&#128276;<span class="bellcount" style="display:none"></span></button>${LTABS.map(t=>`<button class="${t===S.tab?'on':''}" data-tab="${t}">${t}</button>`).join('')}<button id="out2">Sign out</button></div><div class="main" id="page"><div class="muted">Loading...</div></div></div></div>
       <button id="toTop" aria-label="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">&#8593;</button>`;
   }
   $$('[data-tab]').forEach(b=>b.onclick=()=>{ S.tab=b.dataset.tab; S.detail=null; window.scrollTo(0,0); render(); });
   ['#out','#out2'].forEach(s=>{ const b=$(s); if(b) b.onclick=()=>sb.auth.signOut(); });
   const fnPage = PAGES[S.detail ? S.detail.kind : S.tab];
-  try { await fnPage(); wireTable(); window.scrollTo(0, scrollY); } catch(e){ if(e===STALE) return; console.error(e); $('#page').innerHTML = `<div class="card">Something went wrong: ${esc(e.message)}</div>`; }
+  try { await fnPage(); wireTable(); window.scrollTo(0, scrollY); updateBell(); } catch(e){ if(e===STALE) return; console.error(e); $('#page').innerHTML = `<div class="card">Something went wrong: ${esc(e.message)}</div>`; }
 }
 function page(html){ $('#page').innerHTML = html; }
 function openCase(id){ S.detail = {kind:'case', id}; window.scrollTo(0,0); render(); }
@@ -415,7 +428,7 @@ const PAGES = {};
 const caseCols = ['Case','Area','Client','Court','Stage / outcome','Next date','Fee'];
 const caseRow = c => ({ on:`openCase('${c.id}')`, cells:[`<b>${esc(c.title)}</b>`, areaTag(c.area), esc(c.clients?.full_name||''), esc(c.court||''), esc(c.status==='closed'?c.outcome:c.stage||''), c.next_date?fd(c.next_date):'-', inr(c.fee_agreed)] });
 const invCols = ['Invoice','Client','Case','Issued','Amount','GST','Total','Due','Status'];
-function invStatus(i){ return i.paid_on ? tag('ok','Paid '+fdShort(i.paid_on)+(i.method?' · '+i.method:'')) : (i.due_on && i.due_on < TODAY ? tag('bad','Overdue '+daysBetween(i.due_on, TODAY)+' days') : tag('warn','Due '+fdShort(i.due_on))); }
+function invStatus(i){ return (i.paid_on ? tag('ok','Paid '+fdShort(i.paid_on)+(i.method?' · '+i.method:'')) : (i.due_on && i.due_on < TODAY ? tag('bad','Overdue '+daysBetween(i.due_on, TODAY)+' days') : tag('warn','Due '+fdShort(i.due_on)))) + (!i.paid_on && i.reminders ? ' '+tag('grey','Reminded '+i.reminders+'x') : ''); }
 const invRow = i => ({ on:`invoiceView('${i.id}')`, cells:[esc(i.number), esc(i.clients?.full_name||''), esc(i.cases?.title||'-'), fd(i.issued_on), inr(i.amount), inr(invTotal(i)-Number(i.amount)), inr(invTotal(i)), fd(i.due_on), invStatus(i)] });
 const hearCols = ['Date','Case','Area','Court','Purpose','Outcome'];
 const hearRow = h => ({ on:`openCase('${h.case_id}')`, cells:[fd(h.hearing_date), `<b>${esc(h.cases?.title||'')}</b>`, areaTag(h.cases?.area), esc(h.cases?.court||''), esc(h.purpose||''), esc(h.outcome_note||(h.hearing_date>=TODAY?'Upcoming':'-'))] });
@@ -1109,7 +1122,7 @@ PAGES['Accounts'] = async () => {
   const areas = ['Criminal','Civil','Labour','Matrimonial'];
   let list = I.filter(i=>S.view.acc.sel==='All time' || inR(i.issued_on,R) || inR(i.paid_on,R));
   if(V.status!=='All') list = list.filter(i => V.status==='Paid'?i.paid_on : V.status==='Overdue'?(!i.paid_on && i.due_on<TODAY) : !i.paid_on);
-  page(`<div class="top"><div><h1>Accounts</h1><div class="sub">Fees billed and collected. Boxes show amounts before GST; tap any box for the invoices behind it.</div></div><div class="chips"><button class="btn ghost" id="newexp">Add expense</button><button class="btn" id="newinv">Raise invoice</button></div></div>
+  page(`<div class="top"><div><h1>Accounts</h1><div class="sub">Fees billed and collected. Boxes show amounts before GST; tap any box for the invoices behind it.</div></div><div class="chips"><button class="btn ghost" id="newexp">Add expense</button><button class="btn ghost" id="remall">Send payment reminders</button><button class="btn" id="newinv">Raise invoice</button></div></div>
    ${periodBar('acc')}
    <div class="grid g3" style="margin:14px 0">
     ${K('Billed','billed',invRow,invCols)}${K('Collected','collected',invRow,invCols,{color:'#2E7D4F'})}${K('Outstanding at period end','outstanding',invRow,invCols,{color:'#8A6400',low:true})}
@@ -1121,7 +1134,7 @@ PAGES['Accounts'] = async () => {
     <div class="grid"><div class="card"><h3>Collected by practice area</h3>${table(['Area','This period',...(prv?['Comparison','Change']:[])], areas.map(a=>{ const c=amt(cur.collected.filter(i=>i.cases?.area===a)), p=prv?amt(prv.collected.filter(i=>i.cases?.area===a)):0; return {on:`drillModal({title:'Collected in ${a}', cols:invCols, rows:S.cache.invoices.filter(i=>i.cases?.area==='${a}' && inR(i.paid_on, range(S.view.acc))).map(invRow)})`, cells:[areaTag(a), inr(c), ...(prv?[inr(p), p?((c-p)/p*100>0?'+':'')+((c-p)/p*100).toFixed(1)+'%':(c?'new':'-')]:[])]}; }), 'arTbl', {colFilters:false})}</div>
      <div class="card"><h3>Expenses in period</h3>${table(expCols, cur.expenses.map(expRow), 'exTbl', {colFilters:false, empty:'No expenses in this period.'})}</div></div></div>`);
   $('#ist').onchange = e => { V.status = e.target.value; render(); };
-  $('#newinv').onclick = () => invoiceForm(); $('#newexp').onclick = () => expenseForm();
+  $('#newinv').onclick = () => invoiceForm(); $('#newexp').onclick = () => expenseForm(); $('#remall').onclick = () => bulkReminders();
 };
 function invoiceForm(caseId){
   const C = S.cache; const cases = C.cases.filter(c=>c.status!=='intake');
@@ -1170,11 +1183,12 @@ async function invoiceView(id){
    ${i.payment_terms?`<div class="muted" style="margin-top:10px">${esc(i.payment_terms)}</div>`:''}${i.notes?`<div style="margin-top:6px">${esc(i.notes)}</div>`:''}
    ${st.upi_id||st.bank?`<div class="muted" style="margin-top:6px">${st.upi_id?'UPI: '+esc(st.upi_id):''}${st.bank?' · Bank: '+esc(st.bank):''}</div>`:''}</div>
    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap"><button class="btn ghost" id="ipr">Print or save PDF</button>
-    ${staff&&!i.paid_on?`<input type="date" id="ipd" value="${TODAY}" style="width:auto"><select id="ipm" style="width:auto">${['UPI','Bank transfer','Cash','Cheque','Card'].map(o=>`<option>${o}</option>`).join('')}</select><button class="btn green" id="ipk">Mark paid</button>`:''}
+    ${staff&&!i.paid_on?`<button class="btn ghost" id="irem">Send reminder${i.reminders?' ('+i.reminders+' sent)':''}</button><input type="date" id="ipd" value="${TODAY}" style="width:auto"><select id="ipm" style="width:auto">${['UPI','Bank transfer','Cash','Cheque','Card'].map(o=>`<option>${o}</option>`).join('')}</select><button class="btn green" id="ipk">Mark paid</button>`:''}
     ${staff&&i.paid_on?'<button class="btn ghost" id="iun">Mark unpaid</button>':''}
     ${!staff&&!i.paid_on?'<button class="btn" id="ipay">Pay now</button>':''}</div>`, {wide:true});
   m.querySelector('#ipr').onclick = () => { const w = window.open('', '_blank'); w.document.write(`<html><head><title>${esc(i.number)}</title><style>body{font-family:Arial;padding:30px;color:#222}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #ddd;padding:8px;text-align:left}.muted{color:#666;font-size:13px}.tag{font-weight:bold}</style></head><body>${m.querySelector('#invprint').innerHTML}<script>print()<\/script></body></html>`); w.document.close(); };
   if(m.querySelector('#ipk')) m.querySelector('#ipk').onclick = async () => { await q(sb.from('invoices').update({paid_on:m.querySelector('#ipd').value||TODAY, method:m.querySelector('#ipm').value}).eq('id',i.id)); dirty('invoices'); m.close(); toast('Marked as paid.'); render(); };
+  if(m.querySelector('#irem')) m.querySelector('#irem').onclick = () => { m.close(); reminderModal(i.id); };
   if(m.querySelector('#iun')) m.querySelector('#iun').onclick = async () => { await q(sb.from('invoices').update({paid_on:null, method:null}).eq('id',i.id)); dirty('invoices'); m.close(); toast('Marked as unpaid.'); render(); };
   if(m.querySelector('#ipay')) m.querySelector('#ipay').onclick = () => toast('Demo: online payment (UPI, card, net banking) connects here through a payment gateway.');
 }
@@ -1250,13 +1264,14 @@ PAGES['Settings'] = async () => {
   page(`<div class="top"><div><h1>Settings</h1><div class="sub">Changes apply for everyone in the chamber after you press Save.</div></div><button class="btn" id="saveset">Save settings</button></div>
    <div class="grid g2">
     <div class="card"><h3>Chamber profile</h3><div class="grid g2" style="gap:10px">${inp('chamber_name','Chamber name (shown on screens and invoices)')}${inp('phone','Phone')}${inp('email','Email','email')}${inp('website','Website')}<div style="grid-column:span 2">${inp('address','Address')}</div></div></div>
-    <div class="card"><h3>Billing and tax</h3><div class="grid g2" style="gap:10px">${inp('invoice_prefix','Invoice prefix (number becomes PREFIX/2026-27/0001)')}${inp('gst_default','Default GST %','number')}${inp('due_days','Days until invoice is due','number')}${inp('gstin','GSTIN')}${inp('pan','PAN')}${inp('upi_id','UPI ID for payments')}<div style="grid-column:span 2">${inp('bank','Bank details printed on invoices')}</div><div style="grid-column:span 2">${inp('payment_terms','Default payment terms')}</div></div></div>
+    <div class="card"><h3>Billing and tax</h3><div class="grid g2" style="gap:10px">${inp('invoice_prefix','Invoice prefix (number becomes PREFIX/2026-27/0001)')}${inp('gst_default','Default GST %','number')}${inp('due_days','Days until invoice is due','number')}${inp('reminder_days','Remind clients this many days before due','number')}${inp('gstin','GSTIN')}${inp('pan','PAN')}${inp('upi_id','UPI ID for payments')}<div style="grid-column:span 2">${inp('bank','Bank details printed on invoices')}</div><div style="grid-column:span 2">${inp('payment_terms','Default payment terms')}</div></div></div>
     <div class="card"><h3>Automation</h3>
      ${tog('auto_transcribe','Transcribe voice notes automatically','Every audio file a client sends is transcribed and translated to English.')}
      ${tog('auto_brief_on_accept','AI brief when a case is accepted','Reads every document and prepares the case brief as soon as you accept.')}
      ${tog('auto_message_outcome','Tell the client after each hearing','When you log a hearing outcome, the client gets a message.')}
      ${tog('auto_conflict_check','Conflict check on new enquiries','Checks the other side against existing clients and cases.')}
      ${tog('remind_overdue','Remind clients of overdue invoices','Shown to the client on their home page.')}
+     ${tog('payment_popup','Payment pop-up at client sign-in','Clients see a pop-up each time they sign in while an invoice is due within the reminder days, until it is paid.')}
      ${tog('client_can_message','Clients can message the chamber','Turn off to make the portal read-only for clients.')}</div>
     <div class="card"><h3>Daily routine and lists</h3><div class="grid g2" style="gap:10px">${inp('brief_time','Morning brief ready by','time')}${inp('wrap_time','End-of-day wrap at','time')}${lst('practice_areas','Practice areas')}${lst('courts','Courts you appear in')}${lst('languages','Client languages')}</div></div>
     <div class="card"><h3>Team logins</h3>${owner?`<div id="team" class="muted">Loading team...</div>
@@ -1399,4 +1414,116 @@ PAGES['Messages'] = async () => {
   if(can){ $('#cs').onclick = async () => { const v=$('#cm').value.trim(); if(!v||!sel) return; await q(sb.from('messages').insert({case_id:sel, client_id:S.profile.client_id, sender:'client', body:v})); dirty('messages'); render(); };
     $('#cm').onkeydown = e => { if(e.key==='Enter') $('#cs').click(); }; }
 };
+/* ===== Bell notifications, payment reminders, due-payment pop-up ===== */
+const remindDays = () => Number(S.settings.reminder_days ?? 5);
+const dueSoon = i => !i.paid_on && i.due_on && i.due_on <= addDays(TODAY, remindDays());
+function dueText(i){ const d = daysBetween(TODAY, i.due_on); return d < 0 ? 'overdue by '+(-d)+' day'+(d===-1?'':'s') : d===0 ? 'due today' : 'due in '+d+' day'+(d===1?'':'s'); }
+
+async function buildNotifs(){
+  const N = [];
+  const add = (key, level, title, detail, when, go) => N.push({key, level, title, detail, when, go});
+  const since = addDays(TODAY, -14);
+  if(isStaff()){
+    await load(['cases','hearings','invoices','enquiries','messages','drafts','law_updates','documents']);
+    const C = S.cache; const tmw = addDays(TODAY, 1);
+    C.hearings.filter(h=>h.hearing_date===TODAY || h.hearing_date===tmw).forEach(h=>add('h:'+h.id, 'high', (h.hearing_date===TODAY?'Hearing today: ':'Hearing tomorrow: ')+(h.cases?.title||''), (h.purpose||'')+' · '+(h.cases?.court||''), h.hearing_date, `openCase('${h.case_id}')`));
+    C.cases.filter(c=>c.status==='active' && c.health==='Limitation').forEach(c=>add('lim:'+c.id, 'high', 'Limitation risk: '+c.title, c.stage||'', c.next_date||TODAY, `openCase('${c.id}')`));
+    C.invoices.filter(dueSoon).forEach(i=>add('inv:'+i.id+':'+i.due_on, i.due_on<TODAY?'high':'mid', 'Payment '+dueText(i)+': '+(i.clients?.full_name||''), i.number+' · '+inr(invTotal(i))+(i.reminders?' · reminded '+i.reminders+'x':' · no reminder sent yet'), i.due_on, `invoiceView('${i.id}')`));
+    C.cases.filter(c=>c.status==='intake').forEach(c=>add('int:'+c.id, 'mid', 'New case from client: '+c.title, c.clients?.full_name||'', (c.created_at||TODAY).slice(0,10), `openCase('${c.id}')`));
+    C.enquiries.filter(e=>e.stage==='new' && !e.declined).forEach(e=>add('enq:'+e.id, 'mid', 'New enquiry: '+e.name, e.summary||'', (e.created_at||TODAY).slice(0,10), `S.tab='New intake';S.detail=null;render()`));
+    C.messages.filter(m=>m.sender==='client' && m.created_at.slice(0,10)>=since).forEach(m=>add('msg:'+m.id, 'mid', 'Message from client · '+(m.cases?.title||''), m.body.slice(0,90), m.created_at.slice(0,10), `openCase('${m.case_id}')`));
+    C.documents.filter(d=>d.shared_by==='client' && d.created_at.slice(0,10)>=since).forEach(d=>add('doc:'+d.id, 'low', 'Client shared '+(d.kind==='audio'?'a voice note':'a document'), d.name+' · '+(d.cases?.title||''), d.created_at.slice(0,10), d.case_id?`openCase('${d.case_id}')`:''));
+    C.drafts.filter(d=>d.status==='Draft').forEach(d=>add('dr:'+d.id+':'+(d.version||1), 'low', 'Draft awaiting approval: '+d.title, d.cases?.title||'', d.created_at.slice(0,10), `openDraft('${d.id}')`));
+    C.law_updates.filter(l=>l.level==='High' && (l.published_on||'')>=addDays(TODAY,-30)).forEach(l=>add('law:'+l.id, 'mid', 'Law change: '+l.title, l.source||'', l.published_on, `lawModal('${l.id}')`));
+  } else {
+    await load(['cases','hearings','invoices','messages']);
+    const C = S.cache;
+    C.invoices.filter(dueSoon).forEach(i=>add('inv:'+i.id+':'+i.due_on+':'+(i.reminders||0), i.due_on<TODAY?'high':'mid', 'Payment '+dueText(i)+': '+inr(invTotal(i)), i.number+' · '+(i.cases?.title||''), i.due_on, `invoiceView('${i.id}')`));
+    C.hearings.filter(h=>h.hearing_date>=TODAY && h.hearing_date<=addDays(TODAY,3)).forEach(h=>add('h:'+h.id, 'high', (h.hearing_date===TODAY?'Hearing today':'Hearing on '+fd(h.hearing_date))+': '+(h.cases?.title||''), (h.purpose||'')+' · '+(h.cases?.court||''), h.hearing_date, `openCase('${h.case_id}')`));
+    C.cases.forEach(c=>{ const n=(c.missing_docs||[]).length; if(n) add('md:'+c.id+':'+n, 'mid', n+' document'+(n===1?'':'s')+' needed from you', c.title, TODAY, `openCase('${c.id}')`); });
+    C.messages.filter(m=>m.sender==='chamber' && m.created_at.slice(0,10)>=since).forEach(m=>add('msg:'+m.id, 'low', 'Message from the chamber', m.body.slice(0,90), m.created_at.slice(0,10), `S.tab='Messages';S.view.mcase='${m.case_id}';S.detail=null;render()`));
+  }
+  const rank = {high:0, mid:1, low:2};
+  return N.sort((a,b)=>rank[a.level]-rank[b.level] || String(b.when).localeCompare(String(a.when)));
+}
+async function saveSeen(keys){
+  keys.forEach(k=>S.seen.add(k));
+  const arr = [...S.seen].slice(-800);
+  try { await sb.from('notif_state').upsert({user_id:S.user.id, seen:arr, updated_at:new Date().toISOString()}); } catch(e){}
+}
+async function updateBell(){
+  try { const N = await buildNotifs(); const n = N.filter(x=>!S.seen.has(x.key)).length;
+    $$('.bellcount').forEach(b=>{ b.textContent = n>99?'99+':n; b.style.display = n?'':'none'; }); } catch(e){}
+}
+async function openBell(){
+  const N = await buildNotifs(); let showAll = false;
+  const m = modal(`<h3>Reminders <span class="muted" id="bn"></span></h3><div class="chips" style="margin-bottom:8px"><button class="chip on" data-bf="new">Unread</button><button class="chip" data-bf="all">All</button><button class="btn ghost sm" id="bread" style="margin-left:auto">Mark all as read</button></div><div id="blist"></div>`, {onClose:updateBell});
+  const draw = () => {
+    const list = N.filter(x=>showAll || !S.seen.has(x.key));
+    m.querySelector('#bn').textContent = N.filter(x=>!S.seen.has(x.key)).length+' unread';
+    m.querySelector('#blist').innerHTML = list.map((x,i)=>`<div class="row click bitem ${S.seen.has(x.key)?'read':''}" data-bi="${N.indexOf(x)}"><span class="bdot ${x.level}"></span><div style="flex:1;min-width:0"><b>${esc(x.title)}</b><div class="muted" style="white-space:normal">${esc(x.detail)}</div></div><span class="muted">${fdShort(x.when)}</span></div>`).join('') || `<div class="muted" style="padding:14px 0">${showAll?'Nothing to show.':'You are all caught up.'}</div>`;
+    m.querySelectorAll('[data-bi]').forEach(r=>r.onclick=async()=>{ const x=N[r.dataset.bi]; await saveSeen([x.key]); m.remove(); updateBell(); if(x.go) new Function(x.go)(); });
+  };
+  m.querySelectorAll('[data-bf]').forEach(b=>b.onclick=()=>{ showAll = b.dataset.bf==='all'; m.querySelectorAll('[data-bf]').forEach(c=>c.classList.toggle('on', c===b)); draw(); });
+  m.querySelector('#bread').onclick = async () => { await saveSeen(N.map(x=>x.key)); draw(); updateBell(); };
+  draw();
+}
+document.addEventListener('click', e => { if(e.target.closest('.bell')) openBell(); });
+
+/* client: pop-up at sign-in when a payment is due within the reminder window */
+async function duePopup(){
+  await load(['invoices']);
+  const due = S.cache.invoices.filter(dueSoon).sort((a,b)=>a.due_on.localeCompare(b.due_on));
+  if(!due.length) return;
+  const total = sum(due, invTotal); const over = due.some(i=>i.due_on<TODAY);
+  const m = modal(`<div style="text-align:center;padding:6px 0 2px"><div class="paybadge ${over?'over':''}">&#8377;</div>
+    <h3 style="justify-content:center;padding-right:0">${over?'Payment overdue':'Payment due soon'}</h3>
+    <div class="muted">${due.length} invoice${due.length===1?'':'s'} · total ${inr(total)} including GST</div></div>
+    ${due.map(i=>`<div class="row"><div><b>${esc(i.number)}</b> · ${inr(invTotal(i))}<div class="muted">${esc(i.cases?.title||'')} · ${i.due_on<TODAY?'<b style="color:#C62828">'+dueText(i)+'</b>':dueText(i)}</div></div><button class="btn ghost sm" data-pv="${i.id}">View</button></div>`).join('')}
+    ${S.settings.upi_id?`<div class="muted" style="margin-top:8px">UPI: <b>${esc(S.settings.upi_id)}</b></div>`:''}
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn ghost" id="plater">Remind me later</button><button class="btn" id="pnow">Pay now</button></div>`);
+  m.classList.add('paymodal');
+  m.querySelector('#plater').onclick = () => m.close();
+  m.querySelector('#pnow').onclick = () => toast('Demo: online payment (UPI, card, net banking) connects here through a payment gateway.');
+  m.querySelectorAll('[data-pv]').forEach(b=>b.onclick=()=>{ m.close(); invoiceView(b.dataset.pv); });
+}
+
+/* staff: send payment reminders */
+function reminderText(i){
+  const st = S.settings; const name = (i.clients?.full_name||'').split(' ')[0];
+  return `Dear ${name}, this is a gentle reminder that invoice ${i.number} for ${inr(invTotal(i))} (including GST)${i.cases?.title?' for '+i.cases.title:''} is ${dueText(i)}${i.due_on?' ('+fd(i.due_on)+')':''}. You can pay from the Payments tab of your portal${st.upi_id?' or by UPI to '+st.upi_id:''}. Please ignore this if already paid. Thank you, ${st.chamber_name||'Takshila'}`;
+}
+async function sendReminder(i, body){
+  await q(sb.from('messages').insert({case_id:i.case_id, client_id:i.client_id, sender:'chamber', body}));
+  await q(sb.from('invoices').update({reminders:(i.reminders||0)+1, last_reminder_at:new Date().toISOString()}).eq('id', i.id));
+  i.reminders = (i.reminders||0)+1;
+}
+async function reminderModal(id){
+  await load(['invoices','clients']);
+  const i = S.cache.invoices.find(x=>x.id===id); const cl = S.cache.clients.find(c=>c.id===i.client_id) || {};
+  const phone = (cl.phone||'').replace(/\D/g,''); const waOk = phone.length>=10 && !/x/i.test(cl.phone||'');
+  const m = modal(`<h3>Payment reminder · ${esc(i.number)}</h3>
+    <div class="muted" style="margin-bottom:8px">${esc(cl.full_name||'')} · ${inr(invTotal(i))} · ${dueText(i)}${i.reminders?' · already reminded '+i.reminders+'x, last '+ftime(i.last_reminder_at):''}</div>
+    <label class="muted">Message (you can edit it)</label><textarea id="rmb" rows="6">${esc(reminderText(i))}</textarea>
+    <div class="muted" style="margin-top:8px">The client gets it in Messages, in their bell, and as a pop-up at sign-in until the invoice is paid.</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">
+     ${waOk?'<button class="btn ghost" id="rmw">Send + open WhatsApp</button>':''}${cl.email?'<button class="btn ghost" id="rme">Send + open email</button>':''}<button class="btn" id="rms">Send in portal</button></div>`);
+  const go = async extra => { const body = m.querySelector('#rmb').value.trim(); if(!body) return; await sendReminder(i, body); if(extra) extra(body); m.close(); dirty('invoices','messages'); toast('Reminder sent to '+(cl.full_name||'client')+'.'); render(); };
+  m.querySelector('#rms').onclick = () => go();
+  if(m.querySelector('#rmw')) m.querySelector('#rmw').onclick = () => go(b => window.open('https://wa.me/'+(phone.length===10?'91'+phone:phone)+'?text='+encodeURIComponent(b), '_blank'));
+  if(m.querySelector('#rme')) m.querySelector('#rme').onclick = () => go(b => { location.href = 'mailto:'+cl.email+'?subject='+encodeURIComponent('Payment reminder: '+i.number)+'&body='+encodeURIComponent(b); });
+}
+async function bulkReminders(){
+  await load(['invoices']);
+  const list = S.cache.invoices.filter(dueSoon).sort((a,b)=>a.due_on.localeCompare(b.due_on));
+  if(!list.length) return toast('No invoices are overdue or due in the next '+remindDays()+' days.');
+  const m = modal(`<h3>Send payment reminders</h3><div class="muted" style="margin-bottom:8px">Unpaid invoices that are overdue or due in the next ${remindDays()} days. Each client gets a personal message in the portal.</div>
+    <label class="tog" style="border-bottom:1px solid #E4DFD4"><input type="checkbox" id="rall" checked><span><b>Select all</b></span></label>
+    ${list.map(i=>`<label class="tog"><input type="checkbox" class="rsel" value="${i.id}" checked><span style="flex:1"><b>${esc(i.clients?.full_name||'')}</b> · ${esc(i.number)} · ${inr(invTotal(i))}<div class="muted">${i.due_on<TODAY?'<b style="color:#C62828">'+dueText(i)+'</b>':dueText(i)}${i.reminders?' · reminded '+i.reminders+'x, last '+fd(i.last_reminder_at):' · not reminded yet'}</div></span></label>`).join('')}
+    <div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="btn" id="rgo">Send reminders</button></div>`, {wide:true});
+  m.querySelector('#rall').onchange = e => m.querySelectorAll('.rsel').forEach(c=>c.checked=e.target.checked);
+  m.querySelector('#rgo').onclick = async e => { const ids=[...m.querySelectorAll('.rsel:checked')].map(c=>c.value); if(!ids.length) return toast('Select at least one.'); e.target.disabled=true; e.target.textContent='Sending...';
+    for(const id of ids){ const i=list.find(x=>x.id===id); await sendReminder(i, reminderText(i)); }
+    m.close(); dirty('invoices','messages'); toast(ids.length+' reminder'+(ids.length===1?'':'s')+' sent.'); render(); };
+}
 </script></body></html>
