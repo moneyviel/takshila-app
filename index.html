@@ -160,6 +160,30 @@ table.dt tr.fr input{padding:4px 7px;font-size:12px;border-radius:6px;min-width:
 #instbar b{color:#0F2A44}
 .instx{background:none;border:none;font-size:22px;color:#6B7684;padding:0 4px}
 @media (max-width:900px){.cinst{display:none}}
+/* keep every page inside the screen width: wide tables scroll inside their card */
+html,body{overflow-x:clip;max-width:100%}
+.grid>*,.card,.main,.cwrap{min-width:0}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.card[style*="overflow:auto"]{overflow:visible!important}
+.mnav{width:100%}
+@media (max-width:900px){
+ .card{padding:14px}
+ td{padding:8px 7px;font-size:13px}
+ th{padding:7px}
+ .top h1{font-size:20px}
+ .chips{gap:5px}
+ .chip{padding:5px 9px}
+ .pbar .plabel{text-align:left}
+ .calbar input,.calbar select{flex:1 1 140px}
+ .modal{padding:10px}
+ .modal .card{max-height:94vh}
+ .row{flex-wrap:wrap}
+ .totals{flex-wrap:wrap;gap:12px}
+}
+@media (max-width:900px){
+ .dt.fit td,.dt.fit th{white-space:normal}
+ .tw{position:relative;background:linear-gradient(to right,#fff 30%,rgba(255,255,255,0)),linear-gradient(to left,#fff 30%,rgba(255,255,255,0)) 100% 0,radial-gradient(farthest-side at 0 50%,rgba(15,42,68,.14),transparent),radial-gradient(farthest-side at 100% 50%,rgba(15,42,68,.14),transparent) 100% 0;background-repeat:no-repeat;background-size:40px 100%,40px 100%,12px 100%,12px 100%;background-attachment:local,local,scroll,scroll}
+}
 </style></head><body><div id="root"></div><div class="toast" id="toast"></div><script>
 /* ===== Takshila core: helpers, state, periods, drill-down, live search ===== */
 const SB_URL = 'https://ixhkncqgbdrsxuvxcwgg.supabase.co';
@@ -169,12 +193,12 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const root = $('#root');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const inr = n => 'Rs ' + Math.round(Number(n)||0).toLocaleString('en-IN');
+const inr = n => 'Rs\u00a0' + Math.round(Number(n)||0).toLocaleString('en-IN');
 const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const pd = s => { if(!s) return null; if(s instanceof Date) return s; const [y,m,d] = String(s).slice(0,10).split('-').map(Number); return new Date(y, m-1, d); };
-const fd = s => { const d = pd(s); return d ? d.getDate()+' '+MON[d.getMonth()]+' '+d.getFullYear() : '-'; };
+const fd = s => { const d = pd(s); return d ? d.getDate()+'\u00a0'+MON[d.getMonth()]+'\u00a0'+d.getFullYear() : '-'; };
 const fdShort = s => { const d = pd(s); return d ? d.getDate()+' '+MON[d.getMonth()] : '-'; };
 const ftime = s => s ? new Date(s).toLocaleString('en-IN',{day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'}) : '-';
 const TODAY = iso(new Date());
@@ -285,8 +309,8 @@ function table(cols, rows, id, opts={}){
   id = id || 't'+(++drillSeq);
   const head = `<tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>` + (opts.colFilters===false?'':`<tr class="fr">${cols.map((c,i)=>`<th><input class="cf" data-col="${i}" placeholder="Filter" aria-label="Filter ${esc(c)}"></th>`).join('')}</tr>`);
   const body = rows.map(r => `<tr class="${r.on?'click':''}" ${r.on?`onclick="${r.on}"`:''} data-s="${esc((r.s || r.cells.map(x=>String(x).replace(/<[^>]+>/g,' ')).join(' ')).toLowerCase())}">${r.cells.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
-  return `<table id="${id}" class="dt"><thead>${head}</thead><tbody>${body || `<tr class="empty"><td colspan="${cols.length}" class="muted">${opts.empty||'Nothing here yet.'}</td></tr>`}</tbody></table>
-    <div class="muted nores" style="display:none;padding:8px">No match.</div>`;
+  return `<div class="tw"><table id="${id}" class="dt ${cols.length<=4?'fit':''}"><thead>${head}</thead><tbody>${body || `<tr class="empty"><td colspan="${cols.length}" class="muted">${opts.empty||'Nothing here yet.'}</td></tr>`}</tbody></table>
+    <div class="muted nores" style="display:none;padding:8px">No match.</div></div>`;
 }
 function applyFilters(tableEl){
   const q = (tableEl._q || '').toLowerCase().trim().split(/\s+/).filter(Boolean);
