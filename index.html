@@ -184,6 +184,17 @@ html,body{overflow-x:clip;max-width:100%}
  .dt.fit td,.dt.fit th{white-space:normal}
  .tw{position:relative;background:linear-gradient(to right,#fff 30%,rgba(255,255,255,0)),linear-gradient(to left,#fff 30%,rgba(255,255,255,0)) 100% 0,radial-gradient(farthest-side at 0 50%,rgba(15,42,68,.14),transparent),radial-gradient(farthest-side at 100% 50%,rgba(15,42,68,.14),transparent) 100% 0;background-repeat:no-repeat;background-size:40px 100%,40px 100%,12px 100%,12px 100%;background-attachment:local,local,scroll,scroll}
 }
+@media (max-width:900px){
+ /* single column on phones: items that span 2-3 columns on a computer must not create extra columns */
+ .grid>*{grid-column:auto!important}
+ .grid label.muted{display:block}
+}
+@media (max-width:900px){
+ table.items tr:first-child{display:none}
+ table.items tr{display:grid;grid-template-columns:1fr 44px;gap:6px;padding:6px 0;border-bottom:1px solid #F0ECE3}
+ table.items td{padding:0;border:none}
+ table.items td:first-child{grid-column:1 / -1}
+}
 </style></head><body><div id="root"></div><div class="toast" id="toast"></div><script>
 /* ===== Takshila core: helpers, state, periods, drill-down, live search ===== */
 const SB_URL = 'https://ixhkncqgbdrsxuvxcwgg.supabase.co';
@@ -398,6 +409,7 @@ async function boot(session){
   if(!p){ root.innerHTML='<div style="padding:40px">Profile not found. <a href="#" onclick="sb.auth.signOut()">Sign out</a></div>'; return; }
   const st = await sb.from('settings').select('data').eq('id',1).maybeSingle();
   S.settings = st.data?.data || {};
+  if(S.settings.reminder_days==null) S.settings.reminder_days = 5;
   S.profile = p; S.cache = {}; S.detail = null;
   const ns = await sb.from('notif_state').select('seen').eq('user_id', S.user.id).maybeSingle();
   S.seen = new Set(ns.data?.seen || []);
@@ -1182,7 +1194,7 @@ function invoiceForm(caseId){
     <div><label class="muted">Invoice date</label><input id="in_date" type="date" value="${TODAY}"></div>
     <div><label class="muted">Due date</label><input id="in_due" type="date" value="${due}"></div>
     <div style="grid-column:span 3"><label class="muted">Case (type to search)</label><input id="in_cs" list="in_cl" placeholder="Start typing a case or client name"><datalist id="in_cl">${cases.map(c=>`<option value="${esc(c.title)} · ${esc(c.clients?.full_name||'')}">`).join('')}</datalist><div class="muted" id="in_info" style="margin-top:4px"></div></div></div>
-   <h3 style="margin-top:14px">Particulars</h3><table class="dt" id="in_items"><tr><th>Description</th><th style="width:150px">Amount (Rs)</th><th style="width:40px"></th></tr></table>
+   <h3 style="margin-top:14px">Particulars</h3><table class="dt items" id="in_items"><tr><th>Description</th><th style="width:150px">Amount (Rs)</th><th style="width:40px"></th></tr></table>
    <button class="btn ghost sm" id="in_add" style="margin-top:6px">Add line</button>
    <div class="grid g3" style="gap:10px;margin-top:12px">
     <div><label class="muted">GST rate %</label><select id="in_gst">${[0,5,12,18].map(r=>`<option ${r===Number(S.settings.gst_default??18)?'selected':''}>${r}</option>`).join('')}</select></div>
@@ -1191,7 +1203,7 @@ function invoiceForm(caseId){
    <div class="totals" id="in_tot"></div>
    <div style="display:flex;justify-content:flex-end;margin-top:12px"><button class="btn" id="in_ok">Create invoice</button></div>`, {wide:true});
   const items = m.querySelector('#in_items');
-  const addLine = (d='', a='') => { const tr=document.createElement('tr'); tr.innerHTML=`<td><input class="i_d" value="${esc(d)}" placeholder="For example: Appearance on 12 Nov, drafting of bail application"></td><td><input class="i_a" type="number" min="0" value="${a}"></td><td><button class="btn ghost sm i_x" aria-label="Remove line">&times;</button></td>`; items.appendChild(tr); tr.querySelector('.i_x').onclick=()=>{ tr.remove(); tot(); }; tr.querySelectorAll('input').forEach(i=>i.oninput=tot); };
+  const addLine = (d='', a='') => { const tr=document.createElement('tr'); tr.innerHTML=`<td><input class="i_d" value="${esc(d)}" placeholder="For example: Appearance on 12 Nov, drafting of bail application"></td><td><input class="i_a" type="number" min="0" value="${a}" placeholder="Amount (Rs)"></td><td><button class="btn ghost sm i_x" aria-label="Remove line">&times;</button></td>`; items.appendChild(tr); tr.querySelector('.i_x').onclick=()=>{ tr.remove(); tot(); }; tr.querySelectorAll('input').forEach(i=>i.oninput=tot); };
   const lines = () => [...items.querySelectorAll('tr')].slice(1).map(tr=>({desc:tr.querySelector('.i_d').value.trim(), amount:Number(tr.querySelector('.i_a').value)||0})).filter(x=>x.desc||x.amount);
   const tot = () => { const s=sum(lines(),x=>x.amount), g=s*Number(m.querySelector('#in_gst').value)/100; m.querySelector('#in_tot').innerHTML=`<div>Subtotal <b>${inr(s)}</b></div><div>GST <b>${inr(g)}</b></div><div style="font-size:16px">Total <b>${inr(s+g)}</b></div>`; };
   const pick = () => { const v=m.querySelector('#in_cs').value; return cases.find(c=>v===c.title+' · '+(c.clients?.full_name||'')) || cases.find(c=>v && c.title===v); };
